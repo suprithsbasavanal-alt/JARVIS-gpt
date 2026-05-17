@@ -1,58 +1,61 @@
-# JARVIS AI Assistant for Mac
+# JARVIS AI Assistant - Ultimate Edition
 
-Welcome to your personal JARVIS! This is a complete, beginner-friendly AI assistant built with Python.
+A fully-featured, Iron Man-inspired AI assistant built entirely in Python.
+Designed specifically for macOS. It is completely beginner-friendly, modular, and extensively documented.
 
-## Prerequisites
-Before installing the Python packages, you need to install some system dependencies. Open your Terminal and run these commands:
+## Features Included
+1. **Core AI**: Wake word detection, Speech-to-text, and local AI processing via Ollama (Llama 3).
+2. **Mac Automation**: Open/close apps, control volume, open websites, shutdown/lock screen.
+3. **Memory System**: Persistent SQLite database to remember your name, facts, and pending tasks.
+4. **Futuristic UI**: A dark-mode, neon-bordered, transparent floating HUD with real-time CPU/RAM stats.
+5. **Vision AI**: Screen reading using Tesseract OCR to explain errors, and basic webcam face detection.
+6. **Internet & Productivity**: Live weather, YouTube/Google search, and built-in Pomodoro focus timers.
 
-1. **Install Homebrew** (if you don't have it):
-   ```bash
-   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-   ```
+## Folder Structure
+- `main.py`: The entry point that boots up JARVIS.
+- `brain/`: AI generation using Ollama (Llama 3).
+- `voice/`: Speech-to-text (SpeechRecognition/Porcupine) and Text-to-speech (pyttsx3).
+- `ui/`: Futuristic PyQt6 Iron Man HUD.
+- `automation/`: Pre-programmed workflows (Study mode, Coding mode).
+- `memory/`: SQLite database for persistent memory (tasks, names, facts).
+- `vision/`: Screen reading, OCR, and Webcam face detection.
+- `system/`: Mac application control, volume, lock screen, and CPU/RAM monitoring.
+- `utils/`: Internet search, weather, and Pomodoro timers.
 
-2. **Install PortAudio** (needed for microphone access):
+## Installation Steps
+
+1. **Install System Dependencies (Mac Terminal):**
    ```bash
    brew install portaudio
-   ```
-
-3. **Install Tesseract** (needed for screen reading):
-   ```bash
    brew install tesseract
    ```
 
-4. **Install Ollama** (the AI brain):
-   Download and install from [ollama.com](https://ollama.com/)
-   After installing, open Terminal and run:
+2. **Install Ollama:**
+   Download from [ollama.com](https://ollama.com/) and run:
    ```bash
    ollama run llama3
    ```
-   *Keep this running or make sure Ollama app is open in your Mac menu bar.*
+   *Keep the app running in your menu bar.*
 
-5. **Get Picovoice AccessKey** (for wake word):
-   - Go to [Picovoice Console](https://console.picovoice.ai/)
-   - Create a free account and copy your AccessKey.
-   - Open `main.py` and replace `"YOUR_PICOVOICE_ACCESS_KEY_HERE"` with your real key.
+3. **Get Picovoice Wake Word Key:**
+   Go to [Picovoice Console](https://console.picovoice.ai/), create a free account, copy your AccessKey, and paste it into `voice/listener.py` (line 12). This is required for the "Hey Jarvis" wake word.
 
-## Installation
-
-1. Open Terminal and navigate to this folder:
-   ```bash
-   cd "/Users/suprith.s.basavanal/Documents/antigrativity /JARVIS"
-   ```
-
-2. Install all required Python libraries:
+4. **Install Python Packages:**
+   Navigate to the project folder and run:
    ```bash
    pip3 install -r requirements.txt
    ```
 
 ## Running JARVIS
-Once everything is installed, run:
 ```bash
 python3 main.py
 ```
 
-## Common Errors
-- **PyAudio fails to install**: Make sure you ran `brew install portaudio` first. If it still fails, try `pip install global pyaudio`.
-- **Microphone not working**: Go to Mac System Settings -> Privacy & Security -> Microphone and ensure Terminal (or your IDE) has permission.
-- **Ollama connection error**: Make sure the Ollama app is running and you have downloaded the `llama3` model.
-- **Wake Word Error**: Ensure you pasted your Picovoice AccessKey into `main.py`.
+## Example Commands
+- "Jarvis, open Chrome."
+- "Start coding mode."
+- "What is the weather?"
+- "Read my screen and explain this error."
+- "Remember my name is Tony."
+- "Who is in front of the computer?"
+- "Lock the screen."
