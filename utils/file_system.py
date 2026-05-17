@@ -1,41 +1,44 @@
 """
-utils/file_system.py
-Allows JARVIS to search for, read, and manage local files on macOS.
+utils/file_system.py  —  JARVIS 3.0 ULTIMATE
+Provides find-file and read-file helpers.
 """
-import os
-import glob
 
-def find_file(filename, search_dir=None):
+import os
+import logging
+
+logger = logging.getLogger("JARVIS.utils.fs")
+
+# Directories to search (user's home, Documents, Desktop, Downloads)
+SEARCH_ROOTS = [
+    os.path.expanduser("~/Documents"),
+    os.path.expanduser("~/Desktop"),
+    os.path.expanduser("~/Downloads"),
+]
+
+
+def find_file(filename: str) -> str | None:
     """
-    Searches for a file by name starting from the given directory (defaulting to Documents).
-    Returns the absolute path if found.
+    Recursively searches common directories for a file matching the given name.
+    Returns the absolute path if found, or None.
     """
-    if not search_dir:
-        search_dir = os.path.expanduser("~/Documents")
-        
-    print(f"Searching for {filename} in {search_dir}...")
-    
-    # Recursive search using glob
-    search_pattern = os.path.join(search_dir, f"**/*{filename}*")
-    matches = glob.glob(search_pattern, recursive=True)
-    
-    # Filter out directories
-    files_only = [f for f in matches if os.path.isfile(f)]
-    
-    if files_only:
-        return files_only[0] # Return the first match
+    for root in SEARCH_ROOTS:
+        for dirpath, _, files in os.walk(root):
+            for f in files:
+                if filename.lower() in f.lower():
+                    return os.path.join(dirpath, f)
+    logger.warning(f"File not found: {filename}")
     return None
 
-def read_file_content(filepath):
+
+def read_file_content(path: str, max_chars: int = 3000) -> str:
     """
-    Reads the content of a text file safely.
+    Reads and returns the text content of a file.
+    Truncates to max_chars to avoid overloading the LLM context.
     """
     try:
-        with open(filepath, 'r', encoding='utf-8') as f:
-            content = f.read()
-            # Truncate if too long to prevent LLM context overflow
-            if len(content) > 5000:
-                content = content[:5000] + "\n...[CONTENT TRUNCATED]"
-            return content
+        with open(path, "r", errors="ignore") as f:
+            content = f.read(max_chars)
+        return content
     except Exception as e:
-        return f"Could not read file. Error: {e}"
+        logger.error(f"read_file error: {e}")
+        return f"Could not read file: {e}"

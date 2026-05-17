@@ -1,31 +1,67 @@
 """
-utils/internet.py
-Handles fetching data from the internet: weather, news, web search.
+utils/internet.py  —  JARVIS 3.0 ULTIMATE
+Provides weather lookup and browser-search helpers.
 """
-import requests
-import urllib.parse
-import system.mac_control as mac
 
-def get_weather(city="New York"):
-    """Fetches current weather using a free API (wttr.in)."""
+import logging
+import subprocess
+import os
+
+logger = logging.getLogger("JARVIS.utils.internet")
+
+# Set your OpenWeatherMap API key as an env var: OPENWEATHER_KEY
+OWM_KEY  = os.getenv("OPENWEATHER_KEY", "")
+CITY     = os.getenv("JARVIS_CITY", "London")   # default city
+
+
+def get_weather() -> str:
+    """
+    Fetches current weather from OpenWeatherMap.
+    Falls back to a DuckDuckGo instant-answer if no API key is set.
+    """
     try:
-        # wttr.in is a free, no-key weather API. format=3 gives a short string.
-        url = f"https://wttr.in/{urllib.parse.quote(city)}?format=3"
-        response = requests.get(url, timeout=5)
-        if response.status_code == 200:
-            return f"The current weather in {response.text}"
-        return "I couldn't fetch the weather right now."
-    except Exception:
-        return "Weather service is currently unreachable."
+        import requests
+        if OWM_KEY:
+            url = "https://api.openweathermap.org/data/2.5/weather"
+            params = {"q": CITY, "appid": OWM_KEY, "units": "metric"}
+            r = requests.get(url, params=params, timeout=8)
+            data = r.json()
+            desc  = data["weather"][0]["description"].capitalize()
+            temp  = data["main"]["temp"]
+            feels = data["main"]["feels_like"]
+            return f"Currently in {CITY}: {desc}, {temp:.1f}°C (feels like {feels:.1f}°C)."
+        else:
+            # Fallback: DuckDuckGo instant answer
+            r = requests.get(
+                "https://api.duckduckgo.com/",
+                params={"q": f"weather {CITY}", "format": "json", "no_html": 1},
+                timeout=8
+            )
+            data = r.json()
+            snippet = data.get("AbstractText", "") or data.get("Answer", "")
+            return snippet[:200] if snippet else "Weather data not available. Set OPENWEATHER_KEY in your environment."
+    except Exception as e:
+        logger.error(f"get_weather error: {e}")
+        return "Could not fetch weather. Check your internet connection."
 
-def search_youtube(query):
-    """Constructs a YouTube search URL and opens it."""
-    url = f"https://www.youtube.com/results?search_query={urllib.parse.quote(query)}"
-    mac.open_website(url)
-    return f"Searching YouTube for {query}."
 
-def search_google(query):
-    """Constructs a Google search URL and opens it."""
-    url = f"https://www.google.com/search?q={urllib.parse.quote(query)}"
-    mac.open_website(url)
-    return f"Searching Google for {query}."
+def search_google(query: str) -> str:
+    """Opens Google Chrome with the given search query."""
+    try:
+        url = f"https://www.google.com/search?q={query.replace(' ', '+')}"
+        os.system(f"open '{url}'")
+        return f"Searching Google for '{query}'."
+    except Exception as e:
+        logger.error(f"search_google error: {e}")
+        return "Could not open Google."
+
+
+def search_youtube(query: str) -> str:
+    """Opens Chrome with a YouTube search for the given query."""
+    try:
+        url = f"https://www.youtube.com/results?search_query={query.replace(' ', '+')}"
+        os.system(f"open '{url}'")
+        return f"Opening YouTube search for '{query}'."
+    except Exception as e:
+        logger.error(f"search_youtube error: {e}")
+        return "Could not open YouTube."

@@ -1,12 +1,21 @@
+# JARVIS 3.0 REAL ACCESS — requirements.txt
 pvporcupine==3.0.2
 SpeechRecognition==3.16.1
+pyaudio==0.2.14
 pyttsx3==2.90
 ollama==0.1.7
 PyAutoGUI==0.9.54
 pytesseract==0.3.13
 opencv-python==4.11.0.86
 PyQt6>=6.7.0
-pyaudio==0.2.14
+numpy
 psutil==5.9.8
 requests==2.31.0
 beautifulsoup4==4.12.3
+python-dotenv
+PyMuPDF
+python-docx
+openpyxl
+elevenlabs
+openai
+anthropic

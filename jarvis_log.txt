@@ -1,0 +1,9 @@
+2026-05-17 11:26:35 [INFO] JARVIS.memory.db: Database initialised.
+2026-05-17 11:26:35 [INFO] JARVIS.main: Welcome back, Sir. JARVIS version 3.0 online. All systems are nominal and ready for your directives.
+2026-05-17 11:26:36 [INFO] JARVIS.speaker: Speaking [happy@185wpm]: Welcome back, Sir. JARVIS version 3.0 online. All systems ar…
+2026-05-17 11:27:10 [INFO] JARVIS.master_agent: MasterAgent routing: 'so what's the plan…'
+2026-05-17 11:27:10 [INFO] httpx: HTTP Request: POST http://127.0.0.1:11434/api/embeddings "HTTP/1.1 200 OK"
+2026-05-17 11:27:10 [INFO] JARVIS.brain: Querying model 'llama3' …
+2026-05-17 11:27:23 [INFO] httpx: HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2026-05-17 11:27:23 [INFO] JARVIS.brain: Response in 12.3s from 'llama3'
+2026-05-17 11:27:23 [INFO] JARVIS.speaker: Speaking [default@172wpm]: Sir! I've been analyzing our schedule and prioritizing tasks…
