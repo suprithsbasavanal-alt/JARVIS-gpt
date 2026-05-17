@@ -1,8 +1,9 @@
 """
 voice/speaker.py
-Handles Text-to-Speech (TTS) functionality.
+Handles Text-to-Speech (TTS) functionality using macOS native 'say' command for maximum stability.
 """
-import pyttsx3
+import os
+import sys
 
 def speak(text, rate=175):
     """
@@ -12,23 +13,14 @@ def speak(text, rate=175):
         rate (int): The speed of speech.
     """
     try:
-        engine = pyttsx3.init()
-        engine.setProperty('rate', rate)
-        
-        # On Mac, 'Daniel' is a popular UK English male voice that sounds professional
-        voices = engine.getProperty('voices')
-        for voice in voices:
-            if "Daniel" in voice.name:
-                engine.setProperty('voice', voice.id)
-                break
-                
-        engine.say(text)
-        engine.runAndWait()
+        # Use macOS native 'say' command to avoid pyttsx3/pyobjc bugs on new Python versions
+        # Escaping quotes to prevent injection
+        safe_text = str(text).replace('"', '\\"')
+        os.system(f'say -r {rate} -v "Daniel" "{safe_text}"')
     except Exception as e:
         print(f"TTS Error: {e}")
 
 def play_sound():
     """Plays a simple system sound for feedback (e.g. when waking up)."""
-    import sys
     sys.stdout.write('\a')
     sys.stdout.flush()

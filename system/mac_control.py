@@ -48,3 +48,22 @@ def shutdown_mac():
     """Initiates Mac shutdown."""
     subprocess.run(['osascript', '-e', 'tell app "System Events" to shut down'])
     return "Shutting down Mac."
+
+def toggle_bluetooth(turn_on=True):
+    """Turns Bluetooth on or off using blueutil."""
+    try:
+        action = "1" if turn_on else "0"
+        subprocess.run(['/opt/homebrew/bin/blueutil', '-p', action])
+        state = "on" if turn_on else "off"
+        return f"Bluetooth is now {state}."
+    except Exception:
+        return "Failed to change Bluetooth. Make sure blueutil is installed."
+
+def toggle_wifi(turn_on=True):
+    """Turns Wi-Fi on or off using networksetup."""
+    try:
+        action = "on" if turn_on else "off"
+        subprocess.run(['networksetup', '-setairportpower', 'en0', action])
+        return f"Wi-Fi is now {action}."
+    except Exception:
+        return "Failed to change Wi-Fi."

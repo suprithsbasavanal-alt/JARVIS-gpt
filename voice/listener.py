@@ -48,8 +48,10 @@ def wait_for_wake_word(callback_on_wake):
         while True:
             text = listen_for_command()
             if "jarvis" in text:
-                callback_on_wake()
-            time.sleep(1)
+                command = text.split("jarvis", 1)[-1].strip()
+                callback_on_wake(command)
+            time.sleep(0.5)
+        return
             
     try:
         # Initialize Porcupine with the default 'jarvis' keyword
