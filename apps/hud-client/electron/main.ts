@@ -28,8 +28,8 @@ function createWindow() {
   // Test active Vite Dev Server URL or load static production files
   if (process.env.VITE_DEV_SERVER_URL) {
     win.loadURL(process.env.VITE_DEV_SERVER_URL)
-    // Open dev tools in dev mode
-    win.webContents.openDevTools({ mode: 'detach' })
+    // Open dev tools in dev mode (commented out for clean HUD view)
+    // win.webContents.openDevTools({ mode: 'detach' })
   } else {
     win.loadFile(path.join(process.env.DIST, 'index.html'))
   }
