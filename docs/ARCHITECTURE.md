@@ -1,4 +1,4 @@
-# System Architecture Document: Project JARVIS (Version 1.0)
+# System Architecture Document: Project JARVIS (Version 1.1)
 
 This document contains the master system architecture for JARVIS: a Personal Cognitive Operating System running locally on Apple Silicon macOS.
 
@@ -9,18 +9,19 @@ This document contains the master system architecture for JARVIS: a Personal Cog
 The diagram below outlines the overall data routing across the core layers and cognitive engines:
 
 ```
-[User Speech/Text] ──► [Sensory Input Layer] ──► [Executive Mind (Priority/Attention)]
-                                                      │
-         ┌────────────────────────────────────────────┴────────────────────────────────────────────┐
-         ▼ (Retrieve Identity / Principles)                                                         ▼ (Retrieve Knowledge Graphs)
-[Identity Engine]                                                                           [Personal Cognitive Core]
-         │                                                                                         │
-         ├──► Values & Motivation Models                                                           ├──► Cognitive State (Focus State)
-         └──► Future Self Growth Vector                                                            └──► Semantic Property Graph Walks
-                                                                                                           │
-         ┌─────────────────────────────────────────────────────────────────────────────────────────┘
-         ▼
-[Planning Engine] ──► [Agents Scheduler] ──► [Tools & Automation] ──► [Verification] ──► [Response Synthesis]
+ [World Model Engine (WME)]
+             │ (Scrapes Technology & Industry Feeds)
+             ▼
+ [Identity Engine (IE)]
+             │ (Maintains Values, Goals & Future Aspiration Profile)
+             ▼
+ [Executive Mind (EM)]
+             │ (Allocates Attention & Computes Priority Agenda)
+             ▼
+ [Personal Cognitive Core (PCC)]
+             │ (Maps User Focus, Active Apps & Screen Layouts)
+             ▼
+ [Planning Engine (DAG)] ──► [Agents Scheduler] ──► [Tools & Automation] ──► [Verification] ──► [Response Synthesis]
 ```
 
 ---
@@ -67,21 +68,28 @@ The diagram below outlines the overall data routing across the core layers and c
 
 ## 3. Cognitive Subsystems
 
-### 3.1 Identity Engine (IE)
-The **Identity Engine** operates at the top of the cognitive loop, establishing who the user is and where their growth targets lie.
+### 3.1 World Model Engine (WME)
+The **World Model Engine** tracks the external tech developments, open-source releases, and vulnerability feeds:
+*   **World Knowledge Graph (WKG)**: Property graph of external technologies, libraries, and capabilities.
+*   **Personal Relevance Match (PRM)**:
+    $$PRM = (SemanticSimilarity \cdot GoalAlignment) \times (1 - FrictionScore)$$
+*   **Ingestion Loops**: Scrapes releases, articles, and security advisories; filters by relevance, and updates the PKG.
+
+### 3.2 Identity Engine (IE)
+The **Identity Engine** operates at the top of the cognitive loop, establishing who the user is and where their growth targets lie:
 *   **Values Model**: Tracks preferred choices and trade-offs (e.g. Local Privacy vs. Cloud Convenience).
 *   **Future Self Model**: Maintains long-term aspirational skills, target timeframes, and growth focuses.
 *   **Evolution Algorithm**: Decays short-term interests while elevating recurring behaviors into core identity nodes based on temporal duration and reinforcement counts.
 
-### 3.2 Executive Mind (EM)
-The **Executive Mind** acts as the high-level Chief of Staff, managing attention allocation, scheduling priority tasks, and identifying project bottlenecks.
+### 3.3 Executive Mind (EM)
+The **Executive Mind** acts as the high-level Chief of Staff, managing attention allocation, scheduling priority tasks, and identifying project bottlenecks:
 *   **Priority Score**:
     $$Priority = \alpha \cdot Impact + \beta \cdot Urgency - \gamma \cdot Cost$$
 *   **Attention Drift Auditor**: Evaluates actual window focus logs against planned attention allocations to flag defocus.
 *   **Daily Strategic Briefing**: Automatically consolidates yesterday's timeline milestones and builds a concise 3-bullet priority schedule.
 
-### 3.3 Personal Cognitive Core (PCC)
-The **Personal Cognitive Core** maintains a representation of active projects, repositories, window states, and concept links.
+### 3.4 Personal Cognitive Core (PCC)
+The **Personal Cognitive Core** maintains a representation of active projects, repositories, window states, and concept links:
 *   **Personal Knowledge Graph (PKG)**: Links user nodes (Identity, Preferences, Goals, Skills, Projects) using semantic properties.
 *   **Cognitive State Engine**: Tracks focus indicators, application contexts, and fatigue metrics.
 *   **Memory Consolidation Loop**: Periodically reads episodic chat logs and screen extractions to merge fresh assertions into Qdrant and Postgres databases.
