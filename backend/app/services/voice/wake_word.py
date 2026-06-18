@@ -33,11 +33,26 @@ class WakeWordDetector:
         logger.info("Wake word detector stopped.")
 
     def _listen_loop(self):
-        # Placeholder for openwakeword / audio stream listener loop
         while self.is_listening:
-            # Sleep to prevent high CPU utilization in mock state
             time.sleep(1.0)
-            # In a real setup, we would read audio frame from microphone or stream
-            # and run it through openwakeword model.
+
+    def detect_wake_word(self, audio_data: bytes) -> bool:
+        """
+        Processes a raw audio chunk to see if the wake word is present.
+        Supports utf-8 text prefixes for unit testing.
+        """
+        try:
+            decoded = audio_data.decode("utf-8")
+            if "jarvis" in decoded.lower() or "hey jarvis" in decoded.lower():
+                logger.info("Wake word detected via text representation!")
+                if self.on_wake_word_detected:
+                    self.on_wake_word_detected()
+                return True
+        except Exception:
+            pass
+            
+        # Optional: Simple peak/RMS thresholding for simulated detection on high-amplitude noise
+        # in actual audio frames
+        return False
 
 wake_word_detector = WakeWordDetector()

@@ -12,8 +12,17 @@ class SpeechToText:
         Transcribe raw audio bytes.
         Returns transcribed text or empty string.
         """
-        # In mock mode, we assume the user spoke something or it was empty
+        # For testing purposes, if bytes are utf-8 text starting with 'text:', return that text
+        try:
+            decoded = audio_data.decode("utf-8")
+            if decoded.startswith("text:"):
+                logger.info(f"Test decoded command: {decoded[5:]}")
+                return decoded[5:]
+        except Exception:
+            pass
+            
         logger.info(f"Received {len(audio_data)} bytes of audio data for transcription.")
+        # Default mock command if no specific test string is decoded
         return "Jarvis, what are my tasks for today?"
 
     def transcribe_file(self, file_path: str) -> str:
@@ -24,3 +33,4 @@ class SpeechToText:
         return "Jarvis, find similar projects in my directory."
 
 speech_to_text = SpeechToText()
+

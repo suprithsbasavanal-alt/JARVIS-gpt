@@ -16,10 +16,12 @@ class TextToSpeech:
         On macOS, falls back to the native 'say' CLI command.
         """
         logger.info(f"Speaking: {text}")
+        self.stop_speaking()
+        
         if self.system == "Darwin":
             try:
                 # Run 'say' in the background to avoid blocking the main execution
-                subprocess.Popen(["say", text])
+                self._active_process = subprocess.Popen(["say", text])
                 return True
             except Exception as e:
                 logger.error(f"macOS 'say' failed: {e}")
@@ -27,6 +29,21 @@ class TextToSpeech:
         # Fallback for other systems or when say fails
         logger.info(f"[TTS PLAYBACK MOCK]: {text}")
         return False
+
+    def stop_speaking(self):
+        """
+        Stops/kills any currently active background TTS playback.
+        """
+        active_proc = getattr(self, "_active_process", None)
+        if active_proc:
+            try:
+                logger.info("Interrupting/stopping active TTS playback.")
+                active_proc.terminate()
+                active_proc.wait(timeout=0.2)
+            except Exception as e:
+                logger.warning(f"Error stopping speaking subprocess: {e}")
+            self._active_process = None
+
 
     def synthesize_to_file(self, text: str, output_path: str) -> bool:
         """
