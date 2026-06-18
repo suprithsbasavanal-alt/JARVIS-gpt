@@ -90,39 +90,50 @@ def post_chat_message(request: ChatRequest, db: Session = Depends(get_db)):
     db.add(user_msg)
     db.commit()
 
-    # 3. Trigger Planner reasoning to create plan and subtasks
-    plan = planner.create_plan(request.message, db)
-    
-    # 4. Execute planning/research steps
-    research_task = next((t for t in plan["tasks"] if t["agent"] == "researcher"), None)
-    
-    if research_task:
-        from backend.agents.researcher import ResearchAgent
-        researcher = ResearchAgent()
-        
-        # Mark the task as in_progress in DB
-        db_task = db.query(Task).filter(Task.id == uuid.UUID(research_task["id"])).first()
-        if db_task:
-            db_task.status = "in_progress"
-            db.commit()
-            
-        reply_content = researcher.perform_research(request.message)
-        
-        # Mark the task as completed in DB
-        if db_task:
-            db_task.status = "completed"
-            db.commit()
-            
-        # Update task status in plan response list
-        for t in plan["tasks"]:
-            if t["id"] == research_task["id"]:
-                t["status"] = "completed"
+    # Check for simple greetings
+    greetings = {"hi", "hello", "hey", "yo", "greetings", "good morning", "good afternoon", "good evening", "jarvis"}
+    clean_msg = request.message.strip().lower().replace("!", "").replace(".", "")
+    if clean_msg in greetings:
+        plan = {
+            "goal": "Respond to greeting",
+            "tasks": []
+        }
+        reply_content = "Hello! I am JARVIS, your AI Desktop Operating Assistant. I am running locally and ready to help. How can I assist you today?"
+        text_to_speech.speak("Hello. I am online and ready.")
     else:
-        # Standard reply fallback
-        reply_content = f"I've initialized the goal: '{plan['goal']}'. I have created {len(plan['tasks'])} subtasks to execute."
+        # 3. Trigger Planner reasoning to create plan and subtasks
+        plan = planner.create_plan(request.message, db)
         
-    # Optional: Speak reply
-    text_to_speech.speak("I have finished analyzing your query.")
+        # 4. Execute planning/research steps
+        research_task = next((t for t in plan["tasks"] if t["agent"] == "researcher"), None)
+        
+        if research_task:
+            from backend.agents.researcher import ResearchAgent
+            researcher = ResearchAgent()
+            
+            # Mark the task as in_progress in DB
+            db_task = db.query(Task).filter(Task.id == uuid.UUID(research_task["id"])).first()
+            if db_task:
+                db_task.status = "in_progress"
+                db.commit()
+                
+            reply_content = researcher.perform_research(request.message)
+            
+            # Mark the task as completed in DB
+            if db_task:
+                db_task.status = "completed"
+                db.commit()
+                
+            # Update task status in plan response list
+            for t in plan["tasks"]:
+                if t["id"] == research_task["id"]:
+                    t["status"] = "completed"
+        else:
+            # Standard reply fallback
+            reply_content = f"I've initialized the goal: '{plan['goal']}'. I have created {len(plan['tasks'])} subtasks to execute."
+            
+        # Optional: Speak reply
+        text_to_speech.speak("I have finished analyzing your query.")
 
 
     # 5. Store Assistant Message
