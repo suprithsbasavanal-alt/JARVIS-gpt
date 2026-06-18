@@ -19,7 +19,12 @@ def web_search(query: str, max_results: int = 5) -> list[dict]:
     logger.info(f"Performing web search for: '{query}'")
     try:
         with DDGS() as ddgs:
-            results = list(ddgs.text(query, max_results=max_results))
+            # Try html backend first since it is more reliable, fallback to default auto
+            try:
+                results = list(ddgs.text(query, max_results=max_results, backend="html"))
+            except Exception:
+                results = list(ddgs.text(query, max_results=max_results))
+                
             parsed_results = [
                 {
                     "title": r.get("title", ""),
@@ -30,7 +35,9 @@ def web_search(query: str, max_results: int = 5) -> list[dict]:
             ]
             if parsed_results:
                 _search_cache[normalized_query] = parsed_results
-            return parsed_results
+                return parsed_results
+            else:
+                raise Exception("DuckDuckGo returned empty results.")
     except Exception as e:
         logger.error(f"DuckDuckGo search failed: {e}")
         # Fallback to general search stub
