@@ -5,6 +5,9 @@ Real data sources checked before use. Honest errors always.
 """
 import sys, threading, time, logging, datetime, re
 from PyQt6.QtWidgets import QApplication
+from dotenv import load_dotenv
+
+load_dotenv() # Load environment variables from .env
 
 logging.basicConfig(filename="jarvis_log.txt", level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
