@@ -5,6 +5,7 @@ from backend.app.core.database import get_db
 from backend.app.services.executive.service import ExecutiveService
 from backend.app.services.executive.attention import AttentionAllocationEngine
 from backend.app.services.executive.briefing import BriefingGenerator
+from backend.app.services.executive.reflection import ReflectionService
 
 router = APIRouter(prefix="/api/executive", tags=["Executive Mind"])
 
@@ -153,3 +154,25 @@ def get_attention_summary(timeframe_hours: int = 24, db: Session = Depends(get_d
         return summary
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to retrieve attention summary: {str(e)}")
+
+@router.post("/reflect")
+def trigger_reflection(db: Session = Depends(get_db)):
+    """
+    Trigger a manual daily reflection calculation.
+    """
+    try:
+        res = ReflectionService.generate_reflection(db=db)
+        return res
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to execute daily reflection: {str(e)}")
+
+@router.get("/reflections")
+def list_reflections(limit: int = 10, db: Session = Depends(get_db)):
+    """
+    Retrieve the history of daily reflection logs.
+    """
+    try:
+        history = ReflectionService.get_reflection_history(db=db, limit=limit)
+        return history
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to retrieve reflections history: {str(e)}")
