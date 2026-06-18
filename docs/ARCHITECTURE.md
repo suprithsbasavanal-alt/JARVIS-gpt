@@ -1,10 +1,31 @@
-# System Architecture Document: Project JARVIS
+# System Architecture Document: Project JARVIS (Version 1.0)
 
-This document contains the complete system architecture for JARVIS: a Personal Cognitive Operating System running locally on Apple Silicon macOS.
+This document contains the master system architecture for JARVIS: a Personal Cognitive Operating System running locally on Apple Silicon macOS.
 
 ---
 
-## 1. Layer Architecture
+## 1. Unified System Topology
+
+The diagram below outlines the overall data routing across the core layers and cognitive engines:
+
+```
+[User Speech/Text] ──► [Sensory Input Layer] ──► [Executive Mind (Priority/Attention)]
+                                                      │
+         ┌────────────────────────────────────────────┴────────────────────────────────────────────┐
+         ▼ (Retrieve Identity / Principles)                                                         ▼ (Retrieve Knowledge Graphs)
+[Identity Engine]                                                                           [Personal Cognitive Core]
+         │                                                                                         │
+         ├──► Values & Motivation Models                                                           ├──► Cognitive State (Focus State)
+         └──► Future Self Growth Vector                                                            └──► Semantic Property Graph Walks
+                                                                                                           │
+         ┌─────────────────────────────────────────────────────────────────────────────────────────┘
+         ▼
+[Planning Engine] ──► [Agents Scheduler] ──► [Tools & Automation] ──► [Verification] ──► [Response Synthesis]
+```
+
+---
+
+## 2. Layer Architecture
 
 ```
 ┌────────────────────────────────────────────────────────────────────────┐
@@ -44,84 +65,32 @@ This document contains the complete system architecture for JARVIS: a Personal C
 
 ---
 
-## 2. Component Diagram
+## 3. Cognitive Subsystems
 
-```
-       ┌────────────────────────┐
-       │   React HUD Client     │
-       └─────┬──────────▲───────┘
-             │ (IPC)    │ (IPC)
-       ┌─────▼──────────┴───────┐
-       │ Electron Main Process  │
-       └─────┬──────────▲───────┘
-             │ (HTTP)   │ (WebSockets Streaming)
-       ┌─────▼──────────┴───────┐
-       │     FastAPI Router     │
-       └─────┬──────────▲───────┘
-             │          │
- ┌───────────▼──────────┴───────────────┐
- │         Executive Agent              │
- └─────┬──────────┬──────────────┬──────┘
-       │          │              │
- ┌─────▼────┐ ┌───▼────┐ ┌───────▼──────┐
- │ Planner  │ │ Memory │ │ Specialized  │
- │ Agent    │ │ Agent  │ │ Agents       │
- └──────────┘ └───┬────┘ └───────┬──────┘
-                  │              │
- ┌────────────────▼───────┐ ┌────▼───────────────────────────────────┐
- │     PostgreSQL DB      │ │ Tools System:                          │
- │     Qdrant Vector DB   │ │ - Web Search (DuckDuckGo HTML)         │
- │     Redis Cache        │ │ - Screen Capture & macOS Vision OCR    │
- └────────────────────────┘ │ - Automation Shell (AppleScript, Bash) │
-                            └────┬───────────────────────────────────┘
-                                 ▼ (Inference Router)
-                            ┌────────────────────────────────────────┐
-                            │    Ollama API Client (Qwen-2.5 / LLM)  │
-                            └────────────────────────────────────────┘
-```
+### 3.1 Identity Engine (IE)
+The **Identity Engine** operates at the top of the cognitive loop, establishing who the user is and where their growth targets lie.
+*   **Values Model**: Tracks preferred choices and trade-offs (e.g. Local Privacy vs. Cloud Convenience).
+*   **Future Self Model**: Maintains long-term aspirational skills, target timeframes, and growth focuses.
+*   **Evolution Algorithm**: Decays short-term interests while elevating recurring behaviors into core identity nodes based on temporal duration and reinforcement counts.
 
----
+### 3.2 Executive Mind (EM)
+The **Executive Mind** acts as the high-level Chief of Staff, managing attention allocation, scheduling priority tasks, and identifying project bottlenecks.
+*   **Priority Score**:
+    $$Priority = \alpha \cdot Impact + \beta \cdot Urgency - \gamma \cdot Cost$$
+*   **Attention Drift Auditor**: Evaluates actual window focus logs against planned attention allocations to flag defocus.
+*   **Daily Strategic Briefing**: Automatically consolidates yesterday's timeline milestones and builds a concise 3-bullet priority schedule.
 
-## 3. Data Flow Diagram
-
-```
-[User Speech] ──► (Web Audio API Stream) ──► [WebSocket: /api/audio/stream]
-                                                   │
-                                                   ▼
-                                            [Whisper STT]
-                                                   │ (Transcribed Text)
-                                                   ▼
-                                           [Executive Agent]
-                                                   │
-     ┌─────────────────────────────────────────────┴──────────────────────────────────────────────┐
-     ▼ (Get Context)                                                                               ▼ (Plan Tasks)
-[Memory Agent]                                                                              [Planner Agent]
-     │                                                                                             │
-     ├──► Read Postgres (Episodic Sessions)                                                        ▼
-     └──► Read Qdrant Vector (Factual Memory)                                               [Subtask list DAG]
-                                                                                                   │
-     ┌─────────────────────────────────────────────────────────────────────────────────────────────┤
-     ▼ (Goal: Screen Read)                                                                         ▼ (Goal: File Organization)
-[Vision Agent]                                                                              [Automation Agent]
-     │                                                                                             │
-     ├──► screencapture -x                                                                         ├──► Check Audit Log
-     ├──► macOS Vision framework (Native OCR)                                                      ├──► Prompt Security Gate
-     └──► Extract frontmost active application                                                     └──► Run osascript (AppleScript)
-                                                                                                           │
-                                                                                                           ▼
-                                                                                                   [Response Synthesis]
-                                                                                                           │
-                                                                                                           ▼
-                                                                                                     [Piper TTS]
-                                                                                                           │
-                                                                                                           ▼
-                                                                                           [Speaker Output / HUD Screen]
-```
+### 3.3 Personal Cognitive Core (PCC)
+The **Personal Cognitive Core** maintains a representation of active projects, repositories, window states, and concept links.
+*   **Personal Knowledge Graph (PKG)**: Links user nodes (Identity, Preferences, Goals, Skills, Projects) using semantic properties.
+*   **Cognitive State Engine**: Tracks focus indicators, application contexts, and fatigue metrics.
+*   **Memory Consolidation Loop**: Periodically reads episodic chat logs and screen extractions to merge fresh assertions into Qdrant and Postgres databases.
 
 ---
 
 ## 4. Agent Architecture
-The orchestrator operates as a Finite State Machine (FSM), controlling task scheduling, agent selection, and execution guardrails:
+
+The orchestrator executes task plans using a Finite State Machine (FSM) scheduling DAG task blocks:
 
 ```
           ┌─────────────────┐
@@ -159,190 +128,15 @@ The orchestrator operates as a Finite State Machine (FSM), controlling task sche
         └─────────────────────┘
 ```
 
-*   **ExecutiveAgent**: Receives raw prompts, fetches active window coordinates, requests semantic vectors from memory stores, runs coordination cycles, and synthesizes finalized spoken briefs.
-*   **PlannerAgent**: Compiles goal lists. If a plan is not solvable by simple text responses, it returns a Directed Acyclic Graph (DAG) JSON detailing sequentially ordered subtasks, agent allocations, and dependencies.
-*   **Specialized Agents**: Handlers for distinct execution scopes:
-    *   **ResearchAgent**: Gathers web search data, extracts raw text, removes page noise, and validates credentials.
-    *   **CodingAgent**: Formulates codebase modifications, analyzes error stack traces, and validates directory codebases.
-    *   **VisionAgent**: Handles visual frames, coordinate calculations, and OCR extraction mapping.
-    *   **AutomationAgent**: Writes shell inputs, calls AppleScript API routines, and modifies files.
-    *   **MemoryAgent**: Tracks facts during conversations, indexes semantic vectors, and cleans database tables.
+*   **Research Agent**: Conducts web scrapes via DuckDuckGo HTML, removes duplicates, cross-references sources, and flags contradictions.
+*   **Coding Agent**: Designs directories, writes functional diff blocks, and debugs compilation logs.
+*   **Vision Agent**: Captures screen layouts, queries frontmost applications via `lsappinfo`, and runs native macOS Vision OCR.
+*   **Automation Agent**: Controls directories, compiles AppleScript layouts, and triggers macOS actions safely.
 
 ---
 
-## 5. Memory Architecture
-JARVIS maintains a multi-tiered memory system designed to separate fast cache states from long-term factual contexts:
+## 5. Security & Isolation Design
 
-```
-                  ┌─────────────────────────────────────┐
-                  │            USER INPUT               │
-                  └──────────────────┬──────────────────┘
-                                     ▼
-                  ┌─────────────────────────────────────┐
-                  │         Working Memory Cache        │
-                  │   - Redis / In-Memory Dict          │
-                  │   - Active application focus state  │
-                  │   - Screen coordinate layouts       │
-                  └──────────────────┬──────────────────┘
-                                     ▼
-        ┌────────────────────────────┴────────────────────────────┐
-        ▼ (Episodic Context Retrieval)                            ▼ (Semantic Context Retrieval)
-┌────────────────────────────────┐                        ┌────────────────────────────────┐
-│   Episodic Memory Database     │                        │   Semantic Vector Database     │
-│   - PostgreSQL / SQLite        │                        │   - Qdrant Database            │
-│   - Conversation transcripts   │                        │   - 1536-dimensional vectors   │
-│   - Completed task statuses    │                        │   - User preferences           │
-│   - Action audit log traces    │                        │   - Historical code structures │
-│   - Ongoing project boards     │                        │   - Aggregated knowledge lists │
-└────────────────────────────────┘                        └────────────────────────────────┘
-```
-*   **Sync Cycle**: The MemoryAgent runs a consolidation sweep every 5 turns. It reads recent episodic transcripts, extracts structural assertions (e.g. User prefers Dark Mode), writes them to PostgreSQL, creates embeddings, and updates the Qdrant index.
-
----
-
-## 6. Research Architecture
-To ensure factual accuracy and avoid hallucinations, the system routes search queries through a strict verification pipeline:
-
-```
-          ┌────────────────────────────────────────────────┐
-          │                 Research Topic                 │
-          └───────────────────────┬────────────────────────┘
-                                  ▼
-          ┌────────────────────────────────────────────────┐
-          │             Query Expansion Engine             │
-          │  - Generates multiple variant lookup strings   │
-          └───────────────────────┬────────────────────────┘
-                                  ▼
-          ┌────────────────────────────────────────────────┐
-          │             Web Search Coordinator             │
-          │  - Requests DuckDuckGo HTML / Lite backends    │
-          │  - Collects links, titles, and body snippets   │
-          └───────────────────────┬────────────────────────┘
-                                  ▼
-          ┌────────────────────────────────────────────────┐
-          │          Fact-Verification Engine              │
-          │  - Cross-references data points across sources │
-          │  - Separates consensus facts from speculation  │
-          │  - Flags contradictions and discrepancies      │
-          └───────────────────────┬────────────────────────┘
-                                  ▼
-          ┌────────────────────────────────────────────────┐
-          │           Source Citation Compiler             │
-          │  - Formulates final report with source links   │
-          └────────────────────────────────────────────────┘
-```
-
----
-
-## 7. Voice Architecture
-Voice synthesis and recognition are processed through local streaming pipelines:
-
-```
-[Microphone Audio (Raw PCM bytes)]
-              │
-              ▼
-[Web Audio API Media Stream Node]
-              │
-              ▼ (WebSocket Transmission)
-[/api/audio/stream Endpoint]
-              │
-              ├──────────► [Wake Word Detector (OpenWakeWord)] ──► Trigger Listen State
-              │
-              ▼
-  [Whisper Speech-to-Text] ──► (Transcribed Text) ──► [Reasoning Engine]
-                                                             │
-                                                             ▼ (Output Text)
-  [Piper Text-to-Speech] ◄───────────────────────────────────┘
-              │
-              ▼ (Generated WAV audio)
-     [Audio Output Node]
-```
-*   **OpenWakeWord**: Constantly parses small overlapping audio buffers from the stream. If "Jarvis" is matched, it triggers the HUD client to flash electric-cyan and capture the subsequent command block.
-*   **Speech-to-Text**: Whisper runs in the background. It transcribes audio buffers locally using CoreML bindings on macOS to minimize processor load.
-*   **Text-to-Speech**: Piper parses response strings and generates real-time audio waveforms using custom voice model weights.
-
----
-
-## 8. Automation Architecture
-```
-                      ┌──────────────────────────┐
-                      │    Automation Agent      │
-                      └────────────┬─────────────┘
-                                   ▼
-                      ┌──────────────────────────┐
-                      │    Execution Router      │
-                      └──────┬────────────┬──────┘
-                             │            │
-            ┌────────────────┘            └────────────────┐
-            ▼ (Shell Execution)                            ▼ (macOS Desktop GUI API)
-┌───────────────────────────────┐               ┌───────────────────────────────┐
-│     POSIX Subprocess Shell    │               │      AppleScript Subsystem    │
-│  - Executes terminal commands │               │  - Runs native osascript code │
-│  - Captures stdout / stderr   │               │  - Targets active UI windows  │
-│  - Enforces execution timeouts│               │  - Simulates keyboard presses │
-└───────────────────────────────┘               └───────────────────────────────┘
-```
-*   **POSIX Subprocess Shell**: Safe, isolated execution commands with timeouts. Destructive operations are identified by pattern match and routed to the Security Gate.
-*   **AppleScript Subsystem**: Used to control native macOS applications (Finder, Safari, Calendar, Reminders) without requiring third-party APIs.
-
----
-
-## 9. Security Architecture
-All system control commands are monitored by a strict security subsystem:
-
-```
-[Automation Agent Command Payload]
-                │
-                ▼
-      [System Guard Filter]
-                │
-                ├── (Safe commands: directory listing, simple app launches)
-                │         │
-                │         ▼
-                │   [Direct Run]
-                │
-                └── (Destructive/CLI commands: rm, write, brew install)
-                          │
-                          ▼
-             [Pending Audit Database] ◄── (Writes is_approved=FALSE log)
-                          │
-                          ▼
-             [HUD Authorization Request]
-                          │
-                          ▼ (Websocket / UI Approve Action)
-              [Security Approver Gate] ──► (Sets is_approved=TRUE) ──► [Execute]
-```
-*   **Sandboxing Policy**: The Python server runs inside an environment restricted to specific directories. Any workspace modification requires registration in the database audit log.
-*   **Credential Storage**: No passwords or API keys are stored in source code files. Keys are loaded at startup from environment variables or the native macOS Keychain.
-
----
-
-## 10. Knowledge Architecture
-The system coordinates structural developer knowledge, project rules, and codebase states into a unified context wrapper:
-
-```
-┌────────────────────────────────────────────────────────┐
-  │                 Workspace Directory                    │
-  └───────────────────────────┬────────────────────────────┘
-                              ▼
-  ┌────────────────────────────────────────────────────────┐
-  │                 Dynamic Workspace Parser               │
-  │  - Maps repository file directory layout               │
-  │  - Parses package configurations and dependencies      │
-  │  - Builds code syntax indexes                          │
-  └───────────────────────────┬────────────────────────────┘
-                              ▼
-  ┌────────────────────────────────────────────────────────┐
-  │                 RAG Context Pipeline                   │
-  │  - Vectorizes code snippets, docs, and configs         │
-  │  - Merges project settings with active goals           │
-  └───────────────────────────┬────────────────────────────┘
-                              ▼
-  ┌────────────────────────────────────────────────────────┐
-  │               Unified Prompt Context                   │
-  │  - Injects relevant files and codebase states          │
-  │  - Adds local system guidelines & style rules          │
-  └───────────────────────────┬────────────────────────────┘
-                              ▼
-                      [Executive Agent]
-```
+1.  **Permission Gate**: Destructive shell operations or workspace writes are added to the database with `is_approved = FALSE` and held until authorized via HUD websocket callbacks.
+2.  **API Secrets Enclave**: Credentials remain locally in `backend/.env` or inside the macOS system keychain, never leaking to frontend assets or external servers.
+3.  **Local Sandboxing**: Network access is restricted to search engines.
