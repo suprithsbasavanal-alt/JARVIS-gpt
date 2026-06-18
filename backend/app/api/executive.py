@@ -6,6 +6,7 @@ from backend.app.services.executive.service import ExecutiveService
 from backend.app.services.executive.attention import AttentionAllocationEngine
 from backend.app.services.executive.briefing import BriefingGenerator
 from backend.app.services.executive.reflection import ReflectionService
+from backend.app.services.executive.critic import AgentCriticService
 
 router = APIRouter(prefix="/api/executive", tags=["Executive Mind"])
 
@@ -176,3 +177,25 @@ def list_reflections(limit: int = 10, db: Session = Depends(get_db)):
         return history
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to retrieve reflections history: {str(e)}")
+
+@router.post("/evaluate")
+def trigger_evaluation(db: Session = Depends(get_db)):
+    """
+    Trigger an immediate agent performance evaluation.
+    """
+    try:
+        res = AgentCriticService.evaluate_agent_performance(db=db)
+        return res
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to execute agent evaluation: {str(e)}")
+
+@router.get("/evaluations")
+def list_evaluations(limit: int = 10, db: Session = Depends(get_db)):
+    """
+    Retrieve historical agent evaluations.
+    """
+    try:
+        history = AgentCriticService.get_evaluation_history(db=db, limit=limit)
+        return history
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to retrieve evaluations history: {str(e)}")
