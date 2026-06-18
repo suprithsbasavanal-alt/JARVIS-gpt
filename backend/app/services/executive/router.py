@@ -12,13 +12,28 @@ class CognitiveRouter:
     """
     
     @staticmethod
-    def evaluate_path(message: str) -> tuple[bool, str | None, dict | None]:
+    def evaluate_path(message: str, db: Session) -> tuple[bool, str | None, dict | None]:
         """
         Evaluate if query fits Fast Path.
         Returns:
             (is_fast: bool, response_text: str | None, plan_data: dict | None)
         """
         clean = message.strip().lower().replace("!", "").replace(".", "").replace("?", "")
+        
+        # 0. Daily Briefing & Priorities Hooks
+        briefing_queries = {
+            "what should i work on today", 
+            "what should i work on", 
+            "daily briefing", 
+            "show my priorities", 
+            "show priorities", 
+            "what are my priorities", 
+            "priorities"
+        }
+        if any(bq in clean for bq in briefing_queries):
+            from backend.app.services.executive.briefing import BriefingGenerator
+            briefing = BriefingGenerator.generate_daily_briefing(db)
+            return True, briefing, {"goal": "Provide strategic daily briefing", "tasks": []}
         
         # 1. Greetings & Identity
         greetings = {"hi", "hello", "hey", "yo", "greetings", "good morning", "good afternoon", "good evening", "jarvis"}

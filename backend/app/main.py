@@ -118,7 +118,7 @@ def post_chat_message(request: ChatRequest, db: Session = Depends(get_db)):
     db.commit()
 
     # Check for Fast Path vs Deep Thinking Path
-    is_fast, fast_reply, fast_plan = CognitiveRouter.evaluate_path(request.message)
+    is_fast, fast_reply, fast_plan = CognitiveRouter.evaluate_path(request.message, db)
     if is_fast:
         plan = fast_plan
         reply_content = fast_reply
