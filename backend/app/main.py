@@ -6,12 +6,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 
-from backend.config import settings
-from backend.database import engine, Base, get_db, Conversation, Message, Task, Memory, AuditLog
-from backend.agents.planner import PlannerAgent
-from backend.agents.vision_agent import vision_agent
-from backend.audio.tts import text_to_speech
-from backend.audio.stt import speech_to_text
+from backend.app.core.config import settings
+from backend.app.core.database import engine, Base, get_db, Conversation, Message, Task, Memory, AuditLog
+from backend.app.agents.planner import PlannerAgent
+from backend.app.agents.vision_agent import vision_agent
+from backend.app.services.voice.tts import text_to_speech
+from backend.app.services.voice.stt import speech_to_text
 
 # Configure Logger
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
@@ -108,7 +108,7 @@ def post_chat_message(request: ChatRequest, db: Session = Depends(get_db)):
         research_task = next((t for t in plan["tasks"] if t["agent"] == "researcher"), None)
         
         if research_task:
-            from backend.agents.researcher import ResearchAgent
+            from backend.app.agents.researcher import ResearchAgent
             researcher = ResearchAgent()
             
             # Mark the task as in_progress in DB

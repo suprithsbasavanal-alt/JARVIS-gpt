@@ -1,8 +1,8 @@
 import logging
 from sqlalchemy.orm import Session
-from backend.agents.base import BaseAgent
-from backend.database import Memory
-from backend.memory import memory_store
+from backend.app.agents.base import BaseAgent
+from backend.app.core.database import Memory
+from backend.app.services.memory.memory import memory_store
 
 logger = logging.getLogger(__name__)
 

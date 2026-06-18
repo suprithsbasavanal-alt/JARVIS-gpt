@@ -3,7 +3,7 @@ from datetime import datetime
 from sqlalchemy import create_engine, Column, String, DateTime, Text, ForeignKey, Boolean, JSON
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import declarative_base, sessionmaker, relationship
-from backend.config import settings
+from backend.app.core.config import settings
 
 Base = declarative_base()
 

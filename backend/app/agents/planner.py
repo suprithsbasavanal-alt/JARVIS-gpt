@@ -1,8 +1,8 @@
 import json
 import logging
 from sqlalchemy.orm import Session
-from backend.agents.base import BaseAgent
-from backend.database import Task
+from backend.app.agents.base import BaseAgent
+from backend.app.core.database import Task
 
 logger = logging.getLogger(__name__)
 

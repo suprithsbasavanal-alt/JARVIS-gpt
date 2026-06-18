@@ -1,4 +1,4 @@
-from backend.agents.base import BaseAgent
+from backend.app.agents.base import BaseAgent
 
 CODER_PROMPT = """You are the JARVIS Coding Agent. Write clean, correct, and modern code, analyze and debug software errors, and design folder structures.
 Ensure code changes are structured as diffs or functional blocks. Maintain logical brevity and objective alignment.

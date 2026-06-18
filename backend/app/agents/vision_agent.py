@@ -4,8 +4,8 @@ import numpy as np
 import platform
 import subprocess
 import re
-from backend.agents.base import BaseAgent
-from backend.vision.ocr import perform_ocr_on_image
+from backend.app.agents.base import BaseAgent
+from backend.app.services.pcc.ocr import perform_ocr_on_image
 
 logger = logging.getLogger(__name__)
 

@@ -1,7 +1,7 @@
 import logging
 import subprocess
 import platform
-from backend.agents.base import BaseAgent
+from backend.app.agents.base import BaseAgent
 
 logger = logging.getLogger(__name__)
 

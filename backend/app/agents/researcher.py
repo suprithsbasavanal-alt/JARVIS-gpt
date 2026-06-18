@@ -1,6 +1,6 @@
 import logging
-from backend.agents.base import BaseAgent
-from backend.tools.search import web_search
+from backend.app.agents.base import BaseAgent
+from backend.app.services.research.search import web_search
 
 logger = logging.getLogger(__name__)
 
