@@ -39,7 +39,6 @@ function App() {
 
     const uptimeTimer = setInterval(() => {
       const start = new Date()
-      // Simulate uptime calculation
       const hours = String(start.getHours()).padStart(2, '0')
       const minutes = String(start.getMinutes()).padStart(2, '0')
       const seconds = String(start.getSeconds()).padStart(2, '0')
@@ -111,30 +110,32 @@ function App() {
     <div className="flex flex-col h-screen w-screen overflow-hidden bg-[rgba(5,10,16,0.92)] scanline-animation relative" style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
       
       {/* Title Bar / Header */}
-      <div className="flex items-center justify-between px-4 py-2 border-b border-[rgba(0,243,255,0.2)] bg-[rgba(14,20,26,0.85)] drag-region select-none" style={{ WebkitAppRegion: 'drag' } as any}>
-        <div className="flex items-center gap-2">
+      <div className="flex items-center justify-between px-4 py-2 border-b border-[rgba(0,243,255,0.2)] bg-[rgba(14,20,26,0.85)] drag-region select-none" style={{ WebkitAppRegion: 'drag', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 16px', borderBottom: '1px solid rgba(0,243,255,0.2)' } as any}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <Cpu className="w-5 h-5 text-[#00f3ff] blink" />
-          <span className="font-bold text-xs tracking-[0.2em] text-[#00f3ff] font-title" style={{ fontFamily: 'var(--font-title)' }}>
+          <span className="font-bold text-xs tracking-[0.2em] text-[#00f3ff] font-title" style={{ fontFamily: 'var(--font-title)', letterSpacing: '0.2em' }}>
             JARVIS // TACTICAL COMMAND CENTER // VOICE FIRST OS
           </span>
         </div>
 
         {/* Window controls */}
-        <div className="flex items-center gap-3 no-drag-region" style={{ WebkitAppRegion: 'no-drag' } as any}>
-          <div className="text-[10px] text-[var(--text-muted)] font-mono uppercase bg-[rgba(0,243,255,0.05)] border border-[rgba(0,243,255,0.1)] px-2 py-0.5">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', backgroundColor: 'rgba(0,243,255,0.05)', border: '1px solid rgba(0,243,255,0.1)', padding: '2px 8px' }}>
             L-TIME: {systemUptime}
           </div>
           
-          <div className="flex items-center gap-1.5 border-l border-[rgba(0,243,255,0.15)] pl-3">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', borderLeft: '1px solid rgba(0,243,255,0.15)', paddingLeft: '12px' }}>
             <button 
               onClick={handleMinimize}
               className="p-1 hover:bg-[rgba(0,243,255,0.15)] text-[#849495] hover:text-[#00f3ff] transition-colors"
+              style={{ background: 'none', border: 'none', cursor: 'pointer' }}
             >
               <Minus className="w-4 h-4" />
             </button>
             <button 
               onClick={handleClose}
               className="p-1 hover:bg-[rgba(255,0,60,0.15)] text-[#849495] hover:text-[#ff003c] transition-colors"
+              style={{ background: 'none', border: 'none', cursor: 'pointer' }}
             >
               <X className="w-4 h-4" />
             </button>
@@ -143,67 +144,67 @@ function App() {
       </div>
 
       {/* Main Grid Workspace */}
-      <div className="flex-1 grid grid-cols-12 gap-3 p-3 overflow-hidden" style={{ minHeight: 0 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: '12px', padding: '12px', overflow: 'hidden', flex: 1, minHeight: 0 }}>
         
         {/* ================= COLUMN 1: INTEL & BRIEFINGS (Left) ================= */}
-        <div className="col-span-3 flex flex-col space-y-3 overflow-y-auto pr-1" style={{ minHeight: 0 }}>
+        <div style={{ gridColumn: 'span 3', display: 'flex', flexDirection: 'column', gap: '12px', overflowY: 'auto', paddingRight: '4px', minHeight: 0 }}>
           
           {/* System Status Panel */}
-          <div className="hud-panel p-3.5 space-y-2.5">
-            <div className="flex items-center justify-between border-b border-[rgba(0,243,255,0.15)] pb-2">
-              <span className="hud-title text-[10px] tracking-widest flex items-center gap-1.5">
+          <div className="hud-panel" style={{ padding: '14px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid rgba(0,243,255,0.15)', paddingBottom: '8px' }}>
+              <span className="hud-title" style={{ fontSize: '10px', letterSpacing: '0.15em', display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <Layers className="w-3.5 h-3.5" /> SYSTEM MATRIX STATUS
               </span>
-              <span className="text-[9px] text-[#00f3ff] font-bold">NOMINAL</span>
+              <span style={{ fontSize: '9px', color: '#00f3ff', fontWeight: 'bold' }}>NOMINAL</span>
             </div>
             
-            <div className="grid grid-cols-2 gap-2 text-[10px] font-mono">
-              <div className="p-1.5 border border-[rgba(0,243,255,0.08)] bg-[rgba(0,0,0,0.25)]">
-                <span className="text-[var(--text-muted)] block uppercase text-[8px]">CORE FREQ</span>
-                <span className="text-white font-bold">4.2 GHz</span>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', fontSize: '10px', fontFamily: 'var(--font-mono)' }}>
+              <div style={{ padding: '6px', border: '1px solid rgba(0,243,255,0.08)', backgroundColor: 'rgba(0,0,0,0.25)' }}>
+                <span style={{ color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase', fontSize: '8px', marginBottom: '2px' }}>CORE FREQ</span>
+                <span style={{ color: 'white', fontWeight: 'bold' }}>4.2 GHz</span>
               </div>
-              <div className="p-1.5 border border-[rgba(0,243,255,0.08)] bg-[rgba(0,0,0,0.25)]">
-                <span className="text-[var(--text-muted)] block uppercase text-[8px]">RAM HEAP</span>
-                <span className="text-[#00f3ff] font-bold">142 MB</span>
+              <div style={{ padding: '6px', border: '1px solid rgba(0,243,255,0.08)', backgroundColor: 'rgba(0,0,0,0.25)' }}>
+                <span style={{ color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase', fontSize: '8px', marginBottom: '2px' }}>RAM HEAP</span>
+                <span style={{ color: '#00f3ff', fontWeight: 'bold' }}>142 MB</span>
               </div>
-              <div className="p-1.5 border border-[rgba(0,243,255,0.08)] bg-[rgba(0,0,0,0.25)]">
-                <span className="text-[var(--text-muted)] block uppercase text-[8px]">AUDIO FEED</span>
-                <span className="text-white font-bold">48 kHz PCM</span>
+              <div style={{ padding: '6px', border: '1px solid rgba(0,243,255,0.08)', backgroundColor: 'rgba(0,0,0,0.25)' }}>
+                <span style={{ color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase', fontSize: '8px', marginBottom: '2px' }}>AUDIO FEED</span>
+                <span style={{ color: 'white', fontWeight: 'bold' }}>48 kHz PCM</span>
               </div>
-              <div className="p-1.5 border border-[rgba(0,243,255,0.08)] bg-[rgba(0,0,0,0.25)]">
-                <span className="text-[var(--text-muted)] block uppercase text-[8px]">VAD CORE</span>
-                <span className="text-[#00f3ff] font-bold">RMS ONNX</span>
+              <div style={{ padding: '6px', border: '1px solid rgba(0,243,255,0.08)', backgroundColor: 'rgba(0,0,0,0.25)' }}>
+                <span style={{ color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase', fontSize: '8px', marginBottom: '2px' }}>VAD CORE</span>
+                <span style={{ color: '#00f3ff', fontWeight: 'bold' }}>RMS ONNX</span>
               </div>
             </div>
           </div>
 
           {/* Current Focus Panel */}
-          <div className="hud-panel p-3.5 space-y-2">
-            <div className="flex items-center justify-between border-b border-[rgba(0,243,255,0.15)] pb-2">
-              <span className="hud-title text-[10px] tracking-widest flex items-center gap-1.5">
+          <div className="hud-panel" style={{ padding: '14px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid rgba(0,243,255,0.15)', paddingBottom: '8px' }}>
+              <span className="hud-title" style={{ fontSize: '10px', letterSpacing: '0.15em', display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <Cpu className="w-3.5 h-3.5" /> COGNITIVE FOCUS TELEMETRY
               </span>
               {focusState?.attention_drift_alert && (
-                <span className="text-[8px] bg-[rgba(255,0,60,0.2)] text-[#ff003c] border border-[#ff003c] px-1 font-bold animate-pulse">DRIFT</span>
+                <span style={{ fontSize: '8px', backgroundColor: 'rgba(255,0,60,0.2)', color: '#ff003c', border: '1px solid #ff003c', padding: '1px 4px', fontWeight: 'bold' }} className="blink">DRIFT</span>
               )}
             </div>
 
-            <div className="space-y-2 text-[11px] font-mono">
-              <div className="flex justify-between">
-                <span className="text-[var(--text-muted)]">ACTIVE PROJECT:</span>
-                <span className="text-white font-bold truncate max-w-[150px]">{focusState?.active_project || 'None'}</span>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '11px', fontFamily: 'var(--font-mono)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px' }}>
+                <span style={{ color: 'var(--text-muted)' }}>ACTIVE PROJECT:</span>
+                <span style={{ color: 'white', fontWeight: 'bold', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', maxWidth: '150px' }}>{focusState?.active_project || 'None'}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-[var(--text-muted)]">ACTIVE APP:</span>
-                <span className="text-white truncate max-w-[150px]">{focusState?.active_application || 'None'}</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px' }}>
+                <span style={{ color: 'var(--text-muted)' }}>ACTIVE APP:</span>
+                <span style={{ color: 'white', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', maxWidth: '150px' }}>{focusState?.active_application || 'None'}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-[var(--text-muted)]">WINDOW LOAD:</span>
-                <span className="text-[#00f3ff] truncate max-w-[150px]">{focusState?.active_window_title || 'None'}</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px' }}>
+                <span style={{ color: 'var(--text-muted)' }}>WINDOW LOAD:</span>
+                <span style={{ color: '#00f3ff', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', maxWidth: '150px' }}>{focusState?.active_window_title || 'None'}</span>
               </div>
-              <div className="flex justify-between border-t border-[rgba(0,243,255,0.08)] pt-1.5">
-                <span className="text-[var(--text-muted)]">COGNITIVE LOAD:</span>
-                <span className={`font-bold uppercase ${focusState?.cognitive_load === 'high' ? 'text-[#ff003c]' : 'text-[#00f3ff]'}`}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid rgba(0,243,255,0.08)', paddingTop: '6px' }}>
+                <span style={{ color: 'var(--text-muted)' }}>COGNITIVE LOAD:</span>
+                <span style={{ fontWeight: 'bold', textTransform: 'uppercase', color: focusState?.cognitive_load === 'high' ? '#ff003c' : '#00f3ff' }}>
                   {focusState?.cognitive_load || 'low'}
                 </span>
               </div>
@@ -211,17 +212,21 @@ function App() {
           </div>
 
           {/* Daily Briefing Panel */}
-          <div className="hud-panel p-3.5 flex-1 flex flex-col space-y-2 overflow-hidden" style={{ minHeight: '180px' }}>
-            <div className="flex items-center justify-between border-b border-[rgba(0,243,255,0.15)] pb-2">
-              <span className="hud-title text-[10px] tracking-widest flex items-center gap-1.5">
+          <div className="hud-panel" style={{ padding: '14px', display: 'flex', flexDirection: 'column', gap: '8px', overflow: 'hidden', flex: 1, minHeight: '180px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid rgba(0,243,255,0.15)', paddingBottom: '8px' }}>
+              <span className="hud-title" style={{ fontSize: '10px', letterSpacing: '0.15em', display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <Compass className="w-3.5 h-3.5" /> DAILY STRATEGIC INTEL
               </span>
-              <button onClick={fetchDailyBriefing} className="text-[#00f3ff] hover:text-white transition-colors">
-                <RefreshCw className="w-3 h-3" />
+              <button 
+                onClick={fetchDailyBriefing} 
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#00f3ff' }}
+                className="hover:text-white transition-colors"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
               </button>
             </div>
             
-            <div className="flex-1 overflow-y-auto text-[11px] font-mono leading-relaxed text-[#dde3ec] pr-1 whitespace-pre-wrap select-text">
+            <div style={{ flex: 1, overflowY: 'auto', fontSize: '11px', fontFamily: 'var(--font-mono)', lineHeight: '1.6', color: '#dde3ec', whiteSpace: 'pre-wrap', paddingRight: '4px' }} className="select-text">
               {dailyBriefing}
             </div>
           </div>
@@ -229,40 +234,41 @@ function App() {
         </div>
 
         {/* ================= COLUMN 2: VOICE OS HUB & TRANSCRIPTS (Center) ================= */}
-        <div className="col-span-5 flex flex-col space-y-3" style={{ minHeight: 0 }}>
+        <div style={{ gridColumn: 'span 5', display: 'flex', flexDirection: 'column', gap: '12px', minHeight: 0 }}>
           
           {/* Top Panel: Core Voice Orb */}
-          <div className="flex-1 flex flex-col overflow-hidden" style={{ minHeight: 0 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden', flex: 1, minHeight: 0 }}>
             <VoiceIndicator />
           </div>
 
           {/* Bottom Panel: Collapsible Session Log */}
-          <div className="hud-panel p-3.5 h-48 flex flex-col overflow-hidden">
-            <div className="flex items-center justify-between border-b border-[rgba(0,243,255,0.15)] pb-2 mb-2">
-              <span className="hud-title text-[10px] tracking-widest flex items-center gap-1.5">
+          <div className="hud-panel" style={{ height: '192px', display: 'flex', flexDirection: 'column', overflow: 'hidden', padding: '14px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid rgba(0,243,255,0.15)', paddingBottom: '8px', marginBottom: '8px' }}>
+              <span className="hud-title" style={{ fontSize: '10px', letterSpacing: '0.15em', display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <Terminal className="w-3.5 h-3.5" /> CONSOLE SESSION LOG
               </span>
               <button 
                 onClick={handleNewSession}
-                className="text-[9px] border border-[rgba(0,243,255,0.3)] px-2 py-0.5 hover:bg-[rgba(0,243,255,0.1)] text-[#00f3ff]"
+                style={{ fontSize: '9px', border: '1px solid rgba(0,243,255,0.3)', backgroundColor: 'transparent', padding: '2px 8px', color: '#00f3ff', cursor: 'pointer' }}
+                className="hover:bg-[rgba(0,243,255,0.1)] transition-colors"
               >
                 CLEAR SESSION
               </button>
             </div>
 
-            <div className="flex-grow overflow-y-auto space-y-2.5 pr-1 font-mono text-[11px]">
+            <div style={{ flexGrow: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px', paddingRight: '4px', fontFamily: 'var(--font-mono)', fontSize: '11px' }}>
               {conversations.length === 0 ? (
-                <div className="text-center text-[var(--text-muted)] uppercase py-6">
+                <div style={{ textTransform: 'uppercase', color: 'var(--text-muted)', textAlign: 'center', padding: '24px 0' }}>
                   CONSOLE STANDBY. SECURE COMMS LINK ACTIVE.
                 </div>
               ) : (
                 conversations.slice(0, 5).map((session, idx) => (
-                  <div key={session.id} className="flex justify-between p-1.5 border border-[rgba(0,243,255,0.06)] bg-[rgba(0,0,0,0.15)]">
-                    <div className="flex items-center gap-2">
+                  <div key={session.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px', border: '1px solid rgba(0,243,255,0.06)', backgroundColor: 'rgba(0,0,0,0.15)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <MessageSquare className="w-3.5 h-3.5 text-[#00f3ff]" />
-                      <span className="text-[#dde3ec] truncate max-w-[280px]">{session.title}</span>
+                      <span style={{ color: '#dde3ec', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', maxWidth: '280px' }}>{session.title}</span>
                     </div>
-                    <span className="text-[var(--text-muted)] text-[9px] self-center">CHANNEL {idx + 1}</span>
+                    <span style={{ color: 'var(--text-muted)', fontSize: '9px', alignSelf: 'center' }}>CHANNEL {idx + 1}</span>
                   </div>
                 ))
               )}
@@ -272,38 +278,34 @@ function App() {
         </div>
 
         {/* ================= COLUMN 3: GOALS & ALERTS (Right) ================= */}
-        <div className="col-span-4 flex flex-col space-y-3 overflow-y-auto pr-1" style={{ minHeight: 0 }}>
+        <div style={{ gridColumn: 'span 4', display: 'flex', flexDirection: 'column', gap: '12px', overflowY: 'auto', paddingRight: '4px', minHeight: 0 }}>
           
           {/* Active Goals Panel */}
-          <div className="flex-grow flex flex-col overflow-hidden" style={{ minHeight: '180px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden', flex: 1, minHeight: '180px' }}>
             <AgentStatus plan={activePlan} />
           </div>
 
           {/* Alerts & Reflections Tabs */}
-          <div className="hud-panel p-3.5 flex-grow flex flex-col overflow-hidden" style={{ minHeight: '220px' }}>
+          <div className="hud-panel" style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden', flex: 1, minHeight: '220px', padding: '14px' }}>
             
             {/* Tabs */}
-            <div className="flex border-b border-[rgba(0,243,255,0.15)] pb-1.5 mb-2.5">
+            <div style={{ display: 'flex', borderBottom: '1px solid rgba(0,243,255,0.15)', paddingBottom: '6px', marginBottom: '10px' }}>
               <button
                 onClick={() => setActiveRightTab('alerts')}
-                className={`flex-1 pb-1 text-[10px] font-bold uppercase transition-all tracking-wider flex items-center justify-center gap-1.5 ${
-                  activeRightTab === 'alerts' ? 'text-[#00f3ff]' : 'text-[var(--text-muted)] hover:text-white'
-                }`}
+                style={{ display: 'flex', flex: 1, paddingBottom: '4px', fontSize: '10px', fontWeight: 'bold', textTransform: 'uppercase', alignItems: 'center', justifyContent: 'center', gap: '6px', background: 'none', border: 'none', borderBottom: activeRightTab === 'alerts' ? '2px solid #00f3ff' : 'none', color: activeRightTab === 'alerts' ? '#00f3ff' : 'var(--text-muted)', cursor: 'pointer' }}
               >
-                <ShieldAlert className="w-3.5 h-3.5" /> ALERTS ({activeRightTab === 'alerts' ? 'ACTIVE' : 'MONITOR'})
+                <ShieldAlert className="w-3.5 h-3.5" /> ALERTS
               </button>
               <button
                 onClick={() => setActiveRightTab('reflections')}
-                className={`flex-1 pb-1 text-[10px] font-bold uppercase transition-all tracking-wider flex items-center justify-center gap-1.5 ${
-                  activeRightTab === 'reflections' ? 'text-[#00f3ff]' : 'text-[var(--text-muted)] hover:text-white'
-                }`}
+                style={{ display: 'flex', flex: 1, paddingBottom: '4px', fontSize: '10px', fontWeight: 'bold', textTransform: 'uppercase', alignItems: 'center', justifyContent: 'center', gap: '6px', background: 'none', border: 'none', borderBottom: activeRightTab === 'reflections' ? '2px solid #00f3ff' : 'none', color: activeRightTab === 'reflections' ? '#00f3ff' : 'var(--text-muted)', cursor: 'pointer' }}
               >
                 <Compass className="w-3.5 h-3.5" /> REFLECTIONS
               </button>
             </div>
 
             {/* Tab Body */}
-            <div className="flex-1 overflow-y-auto pr-1">
+            <div style={{ flex: 1, overflowY: 'auto', paddingRight: '4px' }}>
               {activeRightTab === 'alerts' && <AlertsViewer />}
               {activeRightTab === 'reflections' && <ReflectionViewer />}
             </div>
@@ -314,9 +316,9 @@ function App() {
       </div>
 
       {/* Footer Status Bar */}
-      <div className="px-4 py-1.5 border-t border-[rgba(0,243,255,0.15)] bg-[rgba(5,10,16,0.95)] flex justify-between items-center text-[9px] text-[var(--text-muted)] font-mono z-10">
-        <div>ENVIRONMENT: LOCAL // COMPONENT LOAD: VOICE CENTER GRID</div>
-        <div className="flex items-center gap-3">
+      <div className="px-4 py-1.5 border-t border-[rgba(0,243,255,0.15)] bg-[rgba(5,10,16,0.95)] flex justify-between items-center text-[9px] text-[var(--text-muted)] font-mono z-10" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '9px', padding: '6px 16px', borderTop: '1px solid rgba(0,243,255,0.15)', backgroundColor: 'rgba(5,10,16,0.95)', fontFamily: 'var(--font-mono)' }}>
+        <div>ENVIRONMENT: LOCAL // COMPONENT LOAD: WIDESCREEN HUD CENTER</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <span>PORT: 8000 // STABLE</span>
           <span>SECURE LINK ENCRYPTED</span>
         </div>

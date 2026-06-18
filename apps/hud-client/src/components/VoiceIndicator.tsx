@@ -440,84 +440,101 @@ export const VoiceIndicator: React.FC<VoiceIndicatorProps> = ({ onTranscription,
 
   const getStatusColor = () => {
     switch (voiceState) {
-      case 'listening': return 'text-[#00f3ff]'
-      case 'thinking': return 'text-[#0066ff] animate-pulse'
-      case 'speaking': return 'text-[#ffffff] font-bold'
-      default: return 'text-[var(--text-muted)]'
+      case 'listening': return '#00f3ff'
+      case 'thinking': return '#0066ff'
+      case 'speaking': return '#ffffff'
+      default: return 'var(--text-muted)'
     }
   }
 
   return (
-    <div className="hud-panel p-4 flex flex-col items-center justify-between" style={{ height: '100%', minHeight: '340px' }}>
+    <div className="hud-panel" style={{ height: '100%', minHeight: '280px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'space-between', padding: '12px' }}>
       
       {/* Header telemetry link */}
-      <div className="flex items-center justify-between w-full border-b border-[rgba(0,243,255,0.15)] pb-3 mb-2">
-        <span className="hud-title text-xs tracking-widest flex items-center gap-1.5">
-          <Volume2 className="w-4 h-4 text-[#00f3ff]" /> JARVIS CORE PRESENCE
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', borderBottom: '1px solid rgba(0,243,255,0.15)', paddingBottom: '8px', marginBottom: '4px' }}>
+        <span className="hud-title" style={{ fontSize: '11px', letterSpacing: '0.15em', display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <Volume2 className="w-3.5 h-3.5" style={{ color: '#00f3ff' }} /> JARVIS CORE PRESENCE
         </span>
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-1">
-            <Wifi className="w-3.5 h-3.5 text-[#00f3ff]" />
-            <span className="text-[10px] text-[#00f3ff] font-mono">{latency}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <Wifi className="w-3 h-3" style={{ color: '#00f3ff' }} />
+            <span style={{ fontSize: '9px', color: '#00f3ff', fontFamily: 'var(--font-mono)' }}>{latency}</span>
           </div>
-          <span className={`text-[10px] uppercase font-bold tracking-wider ${getStatusColor()}`}>
+          <span 
+            style={{ 
+              fontSize: '9px', 
+              textTransform: 'uppercase', 
+              fontWeight: 'bold', 
+              letterSpacing: '0.05em', 
+              color: getStatusColor() 
+            }}
+            className={voiceState === 'thinking' ? 'blink' : ''}
+          >
             {voiceState}
           </span>
         </div>
       </div>
 
       {/* Voice Orb Area */}
-      <div className="relative w-full flex-1 flex items-center justify-center py-4">
+      <div style={{ position: 'relative', width: '100%', flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4px 0' }}>
         <canvas 
           ref={canvasRef} 
           width={300} 
-          height={200} 
-          className="max-w-full max-h-48 drop-shadow-[0_0_20px_rgba(0,243,255,0.15)]"
+          height={140} 
+          style={{ maxWidth: '100%', maxHeight: '130px', filter: 'drop-shadow(0 0 15px rgba(0,243,255,0.15))' }}
         />
         
         {/* Floating Core Status Text overlay */}
-        <div className="absolute bottom-1 text-center">
-          <span className="text-[10px] text-[var(--text-muted)] font-mono tracking-widest uppercase">
+        <div style={{ position: 'absolute', bottom: '2px', textAlign: 'center' }}>
+          <span style={{ fontSize: '9px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', letterSpacing: '0.15em', textTransform: 'uppercase' }}>
             {statusText}
           </span>
         </div>
       </div>
 
       {/* Output Panel: Realtime Transcripts display */}
-      <div className="w-full space-y-3 mt-4 pt-3 border-t border-[rgba(0,243,255,0.12)]">
+      <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '10px', paddingTop: '8px', borderTop: '1px solid rgba(0,243,255,0.12)' }}>
         
         {/* User live speech */}
-        <div className="p-2.5 bg-[rgba(0,0,0,0.4)] border border-[rgba(0,243,255,0.08)] min-h-[46px] flex flex-col justify-center">
-          <span className="text-[9px] text-[#00f3ff] font-mono tracking-wider block font-bold mb-0.5">SPEECH INPUT</span>
-          <p className="text-xs text-[#dde3ec] font-mono leading-relaxed truncate">
-            {liveTranscript ? liveTranscript : <span className="text-[var(--text-muted)] italic">Awaiting voice command...</span>}
+        <div style={{ padding: '8px 10px', backgroundColor: 'rgba(0,0,0,0.4)', border: '1px solid rgba(0,243,255,0.08)', minHeight: '38px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+          <span style={{ fontSize: '8px', color: '#00f3ff', fontFamily: 'var(--font-mono)', letterSpacing: '0.05em', display: 'block', fontWeight: 'bold', marginBottom: '1px' }}>SPEECH INPUT</span>
+          <p style={{ fontSize: '11px', color: '#dde3ec', fontFamily: 'var(--font-mono)', lineHeight: '1.5', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {liveTranscript ? liveTranscript : <span style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>Awaiting voice command...</span>}
           </p>
         </div>
 
         {/* Jarvis reply readout */}
-        <div className="p-2.5 bg-[rgba(0,243,255,0.04)] border border-[rgba(0,243,255,0.15)] min-h-[60px] flex flex-col justify-center">
-          <span className="text-[9px] text-[#ffffff] font-mono tracking-wider block font-bold mb-0.5">JARVIS OUTPUT</span>
-          <p className="text-xs text-[#00f3ff] font-mono leading-relaxed line-clamp-2">
-            {jarvisReply ? jarvisReply : <span className="text-[var(--text-muted)] italic">Standby...</span>}
+        <div style={{ padding: '8px 10px', backgroundColor: 'rgba(0,243,255,0.04)', border: '1px solid rgba(0,243,255,0.15)', minHeight: '48px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+          <span style={{ fontSize: '8px', color: '#ffffff', fontFamily: 'var(--font-mono)', letterSpacing: '0.05em', display: 'block', fontWeight: 'bold', marginBottom: '1px' }}>JARVIS OUTPUT</span>
+          <p style={{ fontSize: '11px', color: '#00f3ff', fontFamily: 'var(--font-mono)', lineHeight: '1.5', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+            {jarvisReply ? jarvisReply : <span style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>Standby...</span>}
           </p>
         </div>
 
         {/* Mic Control toggle */}
         <button
           onClick={() => setIsActive(prev => !prev)}
-          className={`hud-button w-full py-2 flex items-center justify-center gap-2 ${
-            isActive ? 'bg-[rgba(0,243,255,0.06)] border-[#00f3ff]' : 'border-[rgba(0,243,255,0.2)] text-[var(--text-muted)]'
-          }`}
+          className="hud-button"
+          style={{ 
+            width: '100%', 
+            padding: '8px 0', 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center', 
+            gap: '8px', 
+            cursor: 'pointer',
+            ...(isActive ? { backgroundColor: 'rgba(0,243,255,0.06)', borderColor: '#00f3ff' } : { borderColor: 'rgba(0,243,255,0.2)', color: 'var(--text-muted)' })
+          }}
         >
           {isActive ? (
             <>
-              <Mic className="w-4 h-4 text-[#00f3ff]" />
-              <span className="text-xs">UPLINK ACTIVE // PRESS TO MUTE</span>
+              <Mic className="w-4 h-4" style={{ color: '#00f3ff' }} />
+              <span style={{ fontSize: '12px' }}>UPLINK ACTIVE // PRESS TO MUTE</span>
             </>
           ) : (
             <>
-              <MicOff className="w-4 h-4 text-[#ff003c] blink" />
-              <span className="text-xs text-[#ff003c]">UPLINK MUTED // CLICK TO CONNECT</span>
+              <MicOff className="w-4 h-4 blink" style={{ color: '#ff003c' }} />
+              <span style={{ fontSize: '12px', color: '#ff003c' }}>UPLINK MUTED // CLICK TO CONNECT</span>
             </>
           )}
         </button>
@@ -526,3 +543,4 @@ export const VoiceIndicator: React.FC<VoiceIndicatorProps> = ({ onTranscription,
     </div>
   )
 }
+
