@@ -15,6 +15,8 @@ from backend.app.services.voice.stt import speech_to_text
 from backend.app.services.executive.router import CognitiveRouter
 from backend.app.api.memory import router as memory_router
 from backend.app.api.identity import router as identity_router
+from backend.app.api.pcc import router as pcc_router
+
 
 
 
@@ -48,6 +50,8 @@ app.add_middleware(
 # Register API Routers
 app.include_router(memory_router)
 app.include_router(identity_router)
+app.include_router(pcc_router)
+
 
 
 # Initialize Core Agent
