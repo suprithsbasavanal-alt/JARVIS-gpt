@@ -93,11 +93,37 @@ def post_chat_message(request: ChatRequest, db: Session = Depends(get_db)):
     # 3. Trigger Planner reasoning to create plan and subtasks
     plan = planner.create_plan(request.message, db)
     
-    # 4. Generate response content based on plan
-    reply_content = f"I've initialized the goal: '{plan['goal']}'. I have created {len(plan['tasks'])} subtasks to execute."
+    # 4. Execute planning/research steps
+    research_task = next((t for t in plan["tasks"] if t["agent"] == "researcher"), None)
     
+    if research_task:
+        from backend.agents.researcher import ResearchAgent
+        researcher = ResearchAgent()
+        
+        # Mark the task as in_progress in DB
+        db_task = db.query(Task).filter(Task.id == uuid.UUID(research_task["id"])).first()
+        if db_task:
+            db_task.status = "in_progress"
+            db.commit()
+            
+        reply_content = researcher.perform_research(request.message)
+        
+        # Mark the task as completed in DB
+        if db_task:
+            db_task.status = "completed"
+            db.commit()
+            
+        # Update task status in plan response list
+        for t in plan["tasks"]:
+            if t["id"] == research_task["id"]:
+                t["status"] = "completed"
+    else:
+        # Standard reply fallback
+        reply_content = f"I've initialized the goal: '{plan['goal']}'. I have created {len(plan['tasks'])} subtasks to execute."
+        
     # Optional: Speak reply
-    text_to_speech.speak(reply_content)
+    text_to_speech.speak("I have finished analyzing your query.")
+
 
     # 5. Store Assistant Message
     jarvis_msg = Message(

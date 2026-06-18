@@ -15,3 +15,5 @@ opencv-python>=4.9.0.80
 numpy>=1.26.4
 python-multipart>=0.0.9
 requests>=2.32.3
+duckduckgo-search>=8.1.1
+
