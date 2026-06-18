@@ -1,7 +1,7 @@
 from backend.agents.base import BaseAgent
 
-WRITER_PROMPT = """You are the JARVIS Writing Agent. Your task is to write emails, prepare outlines, compose summaries, edit reports, and format Markdown files.
-Maintain an engaging, clear, and professional tone.
+WRITER_PROMPT = """You are the JARVIS Writing Agent. Compose drafts, reports, outlines, summaries, and Markdown files.
+Maintain a professional, clean, and concise tone, avoiding fluff and excessive wordiness.
 """
 
 class WritingAgent(BaseAgent):

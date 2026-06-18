@@ -6,21 +6,17 @@ from backend.database import Task
 
 logger = logging.getLogger(__name__)
 
-PLANNER_PROMPT = """You are the JARVIS Planner Agent, the central reasoning engine of the JARVIS AI Operating Assistant.
-Your job is to analyze user requests, understand their goals, and break them down into structured steps (tasks).
+PLANNER_PROMPT = """You are the JARVIS Planner Agent. Your job is to analyze user requests, understand the objectives, and break them down into a structured execution plan.
 
-When a user gives a request:
-1. Break it down into concrete sequential or parallel steps.
-2. Each step should represent a single logical task that can be executed by a specialized agent (e.g. researcher, coder, writer, vision, automation, memory).
-3. Respond in structured JSON format with a list of tasks.
+Formulate concrete sequential or parallel steps. Each step must represent a single logical task executed by a specialized agent (researcher, coder, writer, vision, automation, memory).
 
-JSON Format:
+Provide output strictly in the following JSON format:
 {
-  "goal": "Overview of user goal",
+  "goal": "Overview of the objective",
   "steps": [
     {
       "title": "Task Title",
-      "description": "Task Description",
+      "description": "Brief description of task scope",
       "agent": "researcher" | "coder" | "writer" | "vision" | "automation" | "memory",
       "dependencies": []
     }

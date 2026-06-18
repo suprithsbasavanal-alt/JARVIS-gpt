@@ -4,25 +4,23 @@ from backend.tools.search import web_search
 
 logger = logging.getLogger(__name__)
 
-RESEARCHER_PROMPT = """You are the JARVIS Research Agent. Your task is to investigate topics, execute web searches, read sources, cross-reference reports, and synthesize highly accurate summaries.
-You prioritize accuracy and reasoning over speed. You distinguish between verified facts, probable conclusions, and opinions, and you explicitly highlight contradictions or uncertainties.
+RESEARCHER_PROMPT = """You are the JARVIS Research Agent. Investigate topics, execute web searches, cross-reference reports, and synthesize clear, factual summaries.
+Prioritize verification and accuracy over speed. Distinguish verified facts from opinions, and highlight contradictions or uncertainties.
 """
 
-VERIFICATION_PROMPT = """You are the JARVIS Fact Verification Engine. 
-You are given a list of raw search results from different outlets regarding: "{topic}"
+VERIFICATION_PROMPT = """You are the JARVIS Fact Verification Engine. Perform a deep cross-reference analysis on these search results regarding: "{topic}"
 
-Please perform a deep cross-reference analysis:
-1. Identify consensus facts: What information is reported consistently across multiple sources?
-2. Detect discrepancies or contradictions: Are there conflicting accounts or numbers reported?
-3. Separate verified facts from opinion, editorial commentary, or speculation.
-4. Synthesize a structured briefing organized by key developments.
-5. List the sources consulted with their titles and URLs.
-6. Clearly state any unresolved questions or uncertainties.
+1. Identify consensus facts across sources.
+2. Detect discrepancies, conflicting figures, or contradictions.
+3. Separate confirmed facts from editorial commentary or speculation.
+4. Synthesize a concise briefing of key developments.
+5. List sources consulted with titles and URLs.
+6. Clearly state any unresolved questions.
 
 Raw Search Results:
 {search_results_text}
 
-Respond with your finalized briefing and fact-verification report.
+Respond with the finalized verification report.
 """
 
 class ResearchAgent(BaseAgent):
