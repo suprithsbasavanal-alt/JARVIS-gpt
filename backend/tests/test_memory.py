@@ -32,7 +32,17 @@ def setup_db():
 def clean_memory_store():
     from backend.app.services.memory import memory_store
     memory_store.clear()
+    db = SessionLocal()
+    try:
+        from backend.app.core.database import Memory
+        db.query(Memory).delete(synchronize_session=False)
+        db.commit()
+    except Exception:
+        db.rollback()
+    finally:
+        db.close()
     yield
+
 
 
 def test_memory_crud_service(setup_db):
