@@ -16,6 +16,8 @@ from backend.app.services.executive.router import CognitiveRouter
 from backend.app.api.memory import router as memory_router
 from backend.app.api.identity import router as identity_router
 from backend.app.api.pcc import router as pcc_router
+from backend.app.api.executive import router as executive_router
+
 
 
 
@@ -51,6 +53,8 @@ app.add_middleware(
 app.include_router(memory_router)
 app.include_router(identity_router)
 app.include_router(pcc_router)
+app.include_router(executive_router)
+
 
 
 
