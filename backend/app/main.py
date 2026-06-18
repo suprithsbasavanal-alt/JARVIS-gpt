@@ -19,6 +19,7 @@ from backend.app.api.pcc import router as pcc_router
 from backend.app.api.executive import router as executive_router
 from backend.app.api.research import router as research_router
 from backend.app.api.voice import router as voice_router
+from backend.app.api.automation import router as automation_router
 
 
 
@@ -58,6 +59,7 @@ app.include_router(pcc_router)
 app.include_router(executive_router)
 app.include_router(research_router)
 app.include_router(voice_router)
+app.include_router(automation_router)
 
 
 
