@@ -21,14 +21,71 @@ export const ChatHUD: React.FC<ChatHUDProps> = ({ onPlanChange, activeConversati
   const [inputValue, setInputValue] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement | null>(null)
+  const pollIntervalRef = useRef<any>(null)
 
   useEffect(() => {
     fetchHistory()
+    return () => {
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current)
+        pollIntervalRef.current = null
+      }
+    }
   }, [activeConversationId])
 
   useEffect(() => {
     scrollToBottom()
   }, [messages])
+
+  const startPolling = (convId: string) => {
+    if (pollIntervalRef.current) {
+      clearInterval(pollIntervalRef.current)
+    }
+
+    pollIntervalRef.current = setInterval(async () => {
+      try {
+        const res = await fetch(`http://localhost:8000/api/chat/history/${convId}`)
+        const historyData: Message[] = await res.json()
+        
+        // Find if there is a completed response
+        const lastMsg = historyData[historyData.length - 1]
+        let isProcessing = false
+        if (lastMsg && lastMsg.sender === 'jarvis' && lastMsg.thought_trace) {
+          try {
+            const trace = JSON.parse(lastMsg.thought_trace)
+            if (trace && trace.status === 'processing') {
+              isProcessing = true
+            }
+          } catch (e) {
+            // Not JSON or doesn't have status: processing
+          }
+        }
+
+        setMessages(historyData)
+
+        if (!isProcessing) {
+          if (pollIntervalRef.current) {
+            clearInterval(pollIntervalRef.current)
+            pollIntervalRef.current = null
+          }
+          setIsLoading(false)
+          
+          if (lastMsg && lastMsg.sender === 'jarvis' && lastMsg.thought_trace) {
+            try {
+              const trace = JSON.parse(lastMsg.thought_trace)
+              if (trace && (trace.goal || trace.tasks)) {
+                onPlanChange(trace)
+              }
+            } catch (e) {
+              // Ignore
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Error polling chat history:', err)
+      }
+    }, 2000)
+  }
 
   const fetchHistory = async () => {
     if (!activeConversationId) return
@@ -36,6 +93,27 @@ export const ChatHUD: React.FC<ChatHUDProps> = ({ onPlanChange, activeConversati
       const res = await fetch(`http://localhost:8000/api/chat/history/${activeConversationId}`)
       const data = await res.json()
       setMessages(data)
+
+      // Check if last message is processing, if so resume polling
+      const lastMsg = data[data.length - 1]
+      let isProcessing = false
+      if (lastMsg && lastMsg.sender === 'jarvis' && lastMsg.thought_trace) {
+        try {
+          const trace = JSON.parse(lastMsg.thought_trace)
+          if (trace && trace.status === 'processing') {
+            isProcessing = true
+          }
+        } catch (e) {
+          // Ignore
+        }
+      }
+
+      if (isProcessing) {
+        setIsLoading(true)
+        startPolling(activeConversationId)
+      } else {
+        setIsLoading(false)
+      }
     } catch (err) {
       console.error('Failed to fetch chat logs:', err)
     }
@@ -73,8 +151,10 @@ export const ChatHUD: React.FC<ChatHUDProps> = ({ onPlanChange, activeConversati
       })
 
       const data = await res.json()
+      let currentConvId = activeConversationId
       if (!activeConversationId && data.conversation_id) {
         setActiveConversationId(data.conversation_id)
+        currentConvId = data.conversation_id
       }
 
       const tempJarvisMsg: Message = {
@@ -89,6 +169,12 @@ export const ChatHUD: React.FC<ChatHUDProps> = ({ onPlanChange, activeConversati
       if (data.plan) {
         onPlanChange(data.plan)
       }
+
+      if (data.status === 'processing' && currentConvId) {
+        startPolling(currentConvId)
+      } else {
+        setIsLoading(false)
+      }
     } catch (err) {
       console.error('Failed to communicate with Jarvis backend:', err)
       const errorMsg: Message = {
@@ -98,7 +184,6 @@ export const ChatHUD: React.FC<ChatHUDProps> = ({ onPlanChange, activeConversati
         created_at: new Date().toISOString()
       }
       setMessages(prev => [...prev, errorMsg])
-    } finally {
       setIsLoading(false)
     }
   }

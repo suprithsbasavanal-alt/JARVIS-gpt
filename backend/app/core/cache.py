@@ -1,48 +1,101 @@
-import redis
 import logging
+import json
+import time
 from backend.app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
-class RedisClient:
+class CacheClient:
+    """
+    A Redis caching client that automatically falls back to a thread-safe
+    in-memory dictionary if Redis is offline or unavailable.
+    """
     def __init__(self):
-        self.client = None
+        self.redis = None
+        self.local_store = {}
+        self.local_expiry = {}
+        
         try:
-            self.client = redis.from_url(settings.REDIS_URL, decode_responses=True)
-            self.client.ping()
-            logger.info("Connected to Redis successfully.")
+            import redis
+            # Parse Redis URL
+            self.redis = redis.from_url(settings.REDIS_URL, socket_timeout=2.0, decode_responses=True)
+            # Test ping
+            self.redis.ping()
+            logger.info("Successfully connected to Redis Cache.")
         except Exception as e:
-            logger.warning(f"Redis not available: {e}. Falling back to in-memory cache.")
-            self.client = None
-            self._local_cache = {}
+            self.redis = None
+            logger.warning(f"Redis not available ({e}). Using in-memory fallback cache.")
 
     def get(self, key: str) -> str | None:
-        if self.client:
+        """
+        Get value from cache. Handles expirations.
+        """
+        if self.redis:
             try:
-                return self.client.get(key)
-            except Exception:
-                pass
-        return self._local_cache.get(key)
+                return self.redis.get(key)
+            except Exception as e:
+                logger.warning(f"Redis GET failed: {e}. Falling back to memory.")
+        
+        # Local fallback
+        if key in self.local_store:
+            expiry = self.local_expiry.get(key)
+            if expiry and time.time() > expiry:
+                # Expired
+                del self.local_store[key]
+                del self.local_expiry[key]
+                return None
+            return self.local_store[key]
+        return None
 
-    def set(self, key: str, value: str, ex: int | None = None) -> bool:
-        if self.client:
+    def set(self, key: str, value: str, ex_seconds: int | None = None) -> bool:
+        """
+        Set key-value in cache with optional expiration in seconds.
+        """
+        if self.redis:
             try:
-                self.client.set(key, value, ex=ex)
+                if ex_seconds:
+                    self.redis.set(key, value, ex=ex_seconds)
+                else:
+                    self.redis.set(key, value)
                 return True
-            except Exception:
-                pass
-        self._local_cache[key] = value
+            except Exception as e:
+                logger.warning(f"Redis SET failed: {e}. Falling back to memory.")
+        
+        # Local fallback
+        self.local_store[key] = value
+        if ex_seconds:
+            self.local_expiry[key] = time.time() + ex_seconds
+        else:
+            self.local_expiry.pop(key, None)
         return True
 
     def delete(self, key: str) -> bool:
-        if self.client:
+        """
+        Delete a key from cache.
+        """
+        if self.redis:
             try:
-                self.client.delete(key)
+                self.redis.delete(key)
                 return True
-            except Exception:
-                pass
-        if key in self._local_cache:
-            del self._local_cache[key]
+            except Exception as e:
+                logger.warning(f"Redis DELETE failed: {e}. Falling back to memory.")
+        
+        # Local fallback
+        self.local_store.pop(key, None)
+        self.local_expiry.pop(key, None)
         return True
 
-cache = RedisClient()
+    def clear(self):
+        """
+        Clear all cached entries.
+        """
+        if self.redis:
+            try:
+                self.redis.flushdb()
+            except Exception:
+                pass
+        self.local_store.clear()
+        self.local_expiry.clear()
+
+# Global cache client instance
+cache = CacheClient()
