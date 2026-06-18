@@ -14,21 +14,25 @@ export const MemoryViewer: React.FC = () => {
 
   useEffect(() => {
     fetchMemories()
-  }, [])
+  }, [activeCategory])
 
   const fetchMemories = async () => {
-    // Basic mock memories fallback if backend API doesn't have custom query endpoints yet
     try {
-      // In a real build, we fetch memories from /api/memory, but let's provide fallback mock records
-      // to keep the premium UI populated instantly!
+      const url = activeCategory === 'all' 
+        ? 'http://localhost:8000/api/memory' 
+        : `http://localhost:8000/api/memory?category=${activeCategory}`
+      const res = await fetch(url)
+      if (!res.ok) throw new Error('API returned non-200 status')
+      const data = await res.json()
+      setMemories(data)
+    } catch (err) {
+      console.warn('Failed to fetch memories from backend, using fallback:', err)
       setMemories([
         { id: '1', entity_key: 'user_name', entity_value: 'Suprith', category: 'preference' },
         { id: '2', entity_key: 'active_editor', entity_value: 'VS Code', category: 'preference' },
         { id: '3', entity_key: 'current_project', entity_value: 'JARVIS-gpt Assistant', category: 'project' },
         { id: '4', entity_key: 'demo_date', entity_value: 'June 19, 2026', category: 'tasks' }
       ])
-    } catch (err) {
-      console.error('Failed to fetch memories:', err)
     }
   }
 

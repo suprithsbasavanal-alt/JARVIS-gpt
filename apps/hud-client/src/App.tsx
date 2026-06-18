@@ -3,6 +3,7 @@ import { ChatHUD } from './components/ChatHUD'
 import { VoiceIndicator } from './components/VoiceIndicator'
 import { AgentStatus } from './components/AgentStatus'
 import { MemoryViewer } from './components/MemoryViewer'
+import { AlertsViewer } from './components/AlertsViewer'
 import { Settings } from './components/Settings'
 import { Cpu, Terminal, Plus, MessageSquare, Monitor, X, Minus } from 'lucide-react'
 
@@ -16,7 +17,7 @@ function App() {
   const [activePlan, setActivePlan] = useState<{ goal: string; tasks: any[] } | null>(null)
   const [conversations, setConversations] = useState<ConversationSession[]>([])
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState<'agents' | 'memory' | 'settings'>('agents')
+  const [activeTab, setActiveTab] = useState<'agents' | 'memory' | 'alerts' | 'settings'>('agents')
 
   useEffect(() => {
     fetchConversations()
@@ -176,6 +177,14 @@ function App() {
               MEMORY
             </button>
             <button
+              onClick={() => setActiveTab('alerts')}
+              className={`flex-1 pb-2 text-[10px] font-bold uppercase transition-all ${
+                activeTab === 'alerts' ? 'text-[#00f3ff] border-b-2 border-[#00f3ff]' : 'text-[var(--text-muted)]'
+              }`}
+            >
+              ALERTS
+            </button>
+            <button
               onClick={() => setActiveTab('settings')}
               className={`flex-1 pb-2 text-[10px] font-bold uppercase transition-all ${
                 activeTab === 'settings' ? 'text-[#00f3ff] border-b-2 border-[#00f3ff]' : 'text-[var(--text-muted)]'
@@ -188,6 +197,7 @@ function App() {
           <div className="flex-1" style={{ flex: 1 }}>
             {activeTab === 'agents' && <AgentStatus plan={activePlan} />}
             {activeTab === 'memory' && <MemoryViewer />}
+            {activeTab === 'alerts' && <AlertsViewer />}
             {activeTab === 'settings' && <Settings />}
           </div>
         </div>
