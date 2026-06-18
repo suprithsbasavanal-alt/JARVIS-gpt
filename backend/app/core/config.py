@@ -14,8 +14,15 @@ class Settings(BaseSettings):
     QDRANT_PORT: int = Field(default=6333)
     REDIS_URL: str = Field(default="redis://localhost:6379/0")
     
+    # Model Configuration
+    PLANNER_PRIMARY_MODEL: str = Field(default="qwen2.5:7b")
+    PLANNER_FALLBACK_MODEL: str = Field(default="llama3.2:3b")
+    EXECUTOR_PRIMARY_MODEL: str = Field(default="llama3:8b")
+    EXECUTOR_FALLBACK_MODEL: str = Field(default="phi3:medium")
+
+    
     # Audio Setup
-    WAKE_WORDS: list[str] = Field(default=["jarvis", "hey jarvis"])
+    WAKE_WORDS: str = Field(default="jarvis,hey jarvis")
     
     model_config = SettingsConfigDict(
         env_file=os.path.join(os.path.dirname(__file__), ".env"),

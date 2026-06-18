@@ -12,6 +12,8 @@ from backend.app.agents.planner import PlannerAgent
 from backend.app.agents.vision_agent import vision_agent
 from backend.app.services.voice.tts import text_to_speech
 from backend.app.services.voice.stt import speech_to_text
+from backend.app.services.executive.router import CognitiveRouter
+
 
 # Configure Logger
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
@@ -90,16 +92,12 @@ def post_chat_message(request: ChatRequest, db: Session = Depends(get_db)):
     db.add(user_msg)
     db.commit()
 
-    # Check for simple greetings
-    greetings = {"hi", "hello", "hey", "yo", "greetings", "good morning", "good afternoon", "good evening", "jarvis"}
-    clean_msg = request.message.strip().lower().replace("!", "").replace(".", "")
-    if clean_msg in greetings:
-        plan = {
-            "goal": "Respond to greeting",
-            "tasks": []
-        }
-        reply_content = "Hello! I am JARVIS, your AI Desktop Operating Assistant. I am running locally and ready to help. How can I assist you today?"
-        text_to_speech.speak("Hello. I am online and ready.")
+    # Check for Fast Path vs Deep Thinking Path
+    is_fast, fast_reply, fast_plan = CognitiveRouter.evaluate_path(request.message)
+    if is_fast:
+        plan = fast_plan
+        reply_content = fast_reply
+        text_to_speech.speak(reply_content)
     else:
         # 3. Trigger Planner reasoning to create plan and subtasks
         plan = planner.create_plan(request.message, db)
@@ -134,6 +132,7 @@ def post_chat_message(request: ChatRequest, db: Session = Depends(get_db)):
             
         # Optional: Speak reply
         text_to_speech.speak("I have finished analyzing your query.")
+
 
 
     # 5. Store Assistant Message
@@ -243,3 +242,6 @@ async def websocket_audio_stream(websocket: WebSocket):
     except Exception as e:
         logger.error(f"WebSocket error: {e}")
         await websocket.close()
+
+# Reload comment trigger
+
