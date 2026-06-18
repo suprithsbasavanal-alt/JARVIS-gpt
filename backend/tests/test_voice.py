@@ -85,6 +85,11 @@ def test_voice_session_manager():
 def test_voice_websocket_endpoint():
     # Use TestClient with websocket
     with client.websocket_connect("/api/voice/stream") as websocket:
+        # Consume initial connection status message
+        init_status = websocket.receive_json()
+        assert init_status["event"] == "status"
+        assert init_status["voice_state"] == "idle"
+
         # 1. Send wake word trigger
         websocket.send_bytes(b"Jarvis")
         resp = websocket.receive_json()
@@ -93,6 +98,10 @@ def test_voice_websocket_endpoint():
         
         # 2. Send command trigger
         websocket.send_bytes(b"text:What tasks do I have?")
+        resp_thinking = websocket.receive_json()
+        assert resp_thinking["event"] == "thinking"
+        assert resp_thinking["voice_state"] == "thinking"
+        
         resp_trans = websocket.receive_json()
         assert resp_trans["event"] == "transcription"
         assert resp_trans["text"] == "What tasks do I have?"

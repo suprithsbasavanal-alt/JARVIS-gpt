@@ -18,3 +18,7 @@ requests>=2.32.3
 duckduckgo-search>=8.1.1
 pyobjc-framework-Vision>=12.2
 pytest>=9.1.0
+openwakeword>=0.6.0
+onnxruntime>=1.18.0
+scipy>=1.10.0
+scikit-learn>=1.0.0

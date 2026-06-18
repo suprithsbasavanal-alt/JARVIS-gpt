@@ -1,9 +1,54 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { Mic, MicOff, Volume2 } from 'lucide-react'
+import { Mic, MicOff, Volume2, Wifi } from 'lucide-react'
 
-export const VoiceIndicator: React.FC = () => {
-  const [isListening, setIsListening] = useState(false)
-  const [transcript, setTranscript] = useState('')
+// Downsamples float32 audio data to 16kHz 16-bit PCM
+function downsampleBuffer(buffer: Float32Array, inputSampleRate: number, outputSampleRate: number): Int16Array {
+  if (inputSampleRate === outputSampleRate) {
+    const result = new Int16Array(buffer.length)
+    for (let i = 0; i < buffer.length; i++) {
+      const s = Math.max(-1, Math.min(1, buffer[i]))
+      result[i] = s < 0 ? s * 0x8000 : s * 0x7FFF
+    }
+    return result
+  }
+  
+  const sampleRateRatio = inputSampleRate / outputSampleRate
+  const newLength = Math.round(buffer.length / sampleRateRatio)
+  const result = new Int16Array(newLength)
+  
+  let offsetResult = 0
+  let offsetBuffer = 0
+  
+  while (offsetResult < result.length) {
+    const nextOffsetBuffer = Math.round((offsetResult + 1) * sampleRateRatio)
+    let accum = 0
+    let count = 0
+    for (let i = offsetBuffer; i < nextOffsetBuffer && i < buffer.length; i++) {
+      accum += buffer[i]
+      count++
+    }
+    const s = count > 0 ? accum / count : 0
+    result[offsetResult] = Math.max(-32768, Math.min(32767, s < 0 ? s * 32768 : s * 32767))
+    offsetResult++
+    offsetBuffer = nextOffsetBuffer
+  }
+  
+  return result
+}
+
+interface VoiceIndicatorProps {
+  onTranscription?: (text: string) => void
+  onResponse?: (text: string) => void
+}
+
+export const VoiceIndicator: React.FC<VoiceIndicatorProps> = ({ onTranscription, onResponse }) => {
+  const [isActive, setIsActive] = useState(true) // Autostart by default
+  const [voiceState, setVoiceState] = useState<'idle' | 'listening' | 'thinking' | 'speaking'>('idle')
+  const [statusText, setStatusText] = useState('Initializing...')
+  const [liveTranscript, setLiveTranscript] = useState('')
+  const [jarvisReply, setJarvisReply] = useState('')
+  const [latency, setLatency] = useState('0ms')
+  
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const audioContextRef = useRef<AudioContext | null>(null)
   const analyserRef = useRef<AnalyserNode | null>(null)
@@ -12,24 +57,42 @@ export const VoiceIndicator: React.FC = () => {
   const animationFrameRef = useRef<number | null>(null)
 
   useEffect(() => {
-    if (isListening) {
-      startRecording()
+    if (isActive) {
+      connectVoicePipeline()
     } else {
-      stopRecording()
+      disconnectVoicePipeline()
     }
     return () => {
-      stopRecording()
+      disconnectVoicePipeline()
     }
-  }, [isListening])
+  }, [isActive])
 
-  const startRecording = async () => {
+  // Canvas visualizer rendering loop
+  useEffect(() => {
+    let active = true
+    const draw = () => {
+      if (!active) return
+      renderOrb()
+      animationFrameRef.current = requestAnimationFrame(draw)
+    }
+    animationFrameRef.current = requestAnimationFrame(draw)
+    return () => {
+      active = false
+      if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current)
+    }
+  }, [voiceState])
+
+  const connectVoicePipeline = async () => {
+    setStatusText('Requesting hardware link...')
     try {
-      // 1. Get User Media Stream
+      // 1. Get mic access
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
       streamRef.current = stream
 
-      // 2. Set up Web Audio API Analyser for Waveform
-      const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)()
+      // 2. Setup audio context (prefer 16000Hz standard, but browser might fallback)
+      const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)({
+        sampleRate: 16000
+      })
       audioContextRef.current = audioCtx
       
       const source = audioCtx.createMediaStreamSource(stream)
@@ -38,52 +101,115 @@ export const VoiceIndicator: React.FC = () => {
       source.connect(analyser)
       analyserRef.current = analyser
 
-      // 3. Set up WebSocket Connection
-      const ws = new WebSocket('ws://localhost:8000/api/audio/stream')
+      // 3. Setup WebSocket client to the full voice session endpoint
+      setStatusText('Establishing secure uplink...')
+      const ws = new WebSocket('ws://localhost:8000/api/voice/stream')
       wsRef.current = ws
 
-      ws.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data)
-          if (data.text) {
-            setTranscript(data.text)
-          }
-        } catch (e) {
-          console.error('Failed to parse websocket message:', e)
-        }
-      }
-
       ws.onopen = () => {
-        console.log('Voice stream connection opened.')
-        // Basic Audio Stream Node to feed WebSocket (mock/simplified PCM push)
+        setStatusText('Secure uplink active.')
+        
+        // 4. Create raw audio processor to stream PCM chunks
         const processor = audioCtx.createScriptProcessor(4096, 1, 1)
         source.connect(processor)
         processor.connect(audioCtx.destination)
 
         processor.onaudioprocess = (e) => {
           if (ws.readyState === WebSocket.OPEN) {
+            const startTime = performance.now()
             const inputData = e.inputBuffer.getChannelData(0)
-            // Convert Float32Array to 16-bit PCM bytes
-            const buffer = new ArrayBuffer(inputData.length * 2)
+            
+            // Downsample and convert float32 to int16 PCM bytes
+            const downsampled = downsampleBuffer(inputData, audioCtx.sampleRate, 16000)
+            const buffer = new ArrayBuffer(downsampled.length * 2)
             const view = new DataView(buffer)
-            for (let i = 0; i < inputData.length; i++) {
-              const s = Math.max(-1, Math.min(1, inputData[i]))
-              view.setInt16(i * 2, s < 0 ? s * 0x8000 : s * 0x7FFF, true)
+            for (let i = 0; i < downsampled.length; i++) {
+              view.setInt16(i * 2, downsampled[i], true)
             }
+            
             ws.send(buffer)
+            const ms = Math.round(performance.now() - startTime)
+            setLatency(`${ms}ms`)
           }
         }
       }
 
-      // Start rendering waveform canvas
-      drawWaveform()
+      ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data)
+          if (data.voice_state) {
+            setVoiceState(data.voice_state)
+          }
+
+          switch (data.event) {
+            case 'status':
+              setStatusText(data.text || 'Online.')
+              break
+            case 'wake_word_detected':
+              setVoiceState('listening')
+              setStatusText('Listening...')
+              setLiveTranscript('')
+              setJarvisReply('Yes?')
+              if (onResponse) onResponse('Yes?')
+              break
+            case 'interrupted':
+              setVoiceState('listening')
+              setStatusText('Listening (Interrupted)...')
+              setJarvisReply('Listening...')
+              break
+            case 'session_timeout':
+              setVoiceState('idle')
+              setStatusText('Standby.')
+              break
+            case 'thinking':
+              setVoiceState('thinking')
+              setStatusText('Thinking...')
+              break
+            case 'transcription':
+              setLiveTranscript(data.text)
+              if (onTranscription) onTranscription(data.text)
+              break
+            case 'response':
+              setVoiceState('speaking')
+              setJarvisReply(data.text)
+              setStatusText('Speaking...')
+              if (onResponse) onResponse(data.text)
+              break
+            case 'empty_transcription':
+              setVoiceState('listening')
+              setStatusText('Listening...')
+              break
+          }
+        } catch (e) {
+          console.error('Failed to parse websocket package:', e)
+        }
+      }
+
+      ws.onerror = (err) => {
+        console.error('Voice stream websocket error:', err)
+        setStatusText('Uplink failed. Retrying...')
+      }
+
+      ws.onclose = () => {
+        console.log('Voice stream connection closed.')
+        if (isActive) {
+          // Auto reconnect after 3 seconds
+          setTimeout(() => {
+            if (isActive) connectVoicePipeline()
+          }, 3000)
+        }
+      }
+
     } catch (err) {
-      console.error('Microphone access refused:', err)
-      setIsListening(false)
+      console.error('Mic access refused:', err)
+      setStatusText('Mic access denied.')
+      setIsActive(false)
     }
   }
 
-  const stopRecording = () => {
+  const disconnectVoicePipeline = () => {
+    setStatusText('Offline.')
+    setVoiceState('idle')
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => track.stop())
       streamRef.current = null
@@ -96,103 +222,307 @@ export const VoiceIndicator: React.FC = () => {
       wsRef.current.close()
       wsRef.current = null
     }
-    if (animationFrameRef.current) {
-      cancelAnimationFrame(animationFrameRef.current)
-    }
     analyserRef.current = null
   }
 
-  const drawWaveform = () => {
+  const renderOrb = () => {
     const canvas = canvasRef.current
-    const analyser = analyserRef.current
-    if (!canvas || !analyser) return
-
+    if (!canvas) return
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
-    const bufferLength = analyser.frequencyBinCount
-    const dataArray = new Uint8Array(bufferLength)
+    const width = canvas.width
+    const height = canvas.height
+    ctx.clearRect(0, 0, width, height)
 
-    const draw = () => {
-      if (!isListening) return
-      animationFrameRef.current = requestAnimationFrame(draw)
+    const centerX = width / 2
+    const centerY = height / 2
+    const baseRadius = Math.min(width, height) / 3.8
+    const time = Date.now() / 1000
 
-      analyser.getByteTimeDomainData(dataArray)
+    // Drawing context setup
+    ctx.lineCap = 'round'
+    
+    // Draw outer technical brackets/ring
+    ctx.strokeStyle = 'rgba(0, 243, 255, 0.1)'
+    ctx.lineWidth = 1
+    ctx.beginPath()
+    ctx.arc(centerX, centerY, baseRadius * 1.5, 0, Math.PI * 2)
+    ctx.stroke()
 
-      ctx.fillStyle = 'rgba(5, 10, 16, 0.4)'
-      ctx.fillRect(0, 0, canvas.width, canvas.height)
+    // Draw ticks on the outer ring
+    for (let i = 0; i < 360; i += 30) {
+      const angle = (i * Math.PI) / 180
+      const x1 = centerX + Math.cos(angle) * (baseRadius * 1.45)
+      const y1 = centerY + Math.sin(angle) * (baseRadius * 1.45)
+      const x2 = centerX + Math.cos(angle) * (baseRadius * 1.52)
+      const y2 = centerY + Math.sin(angle) * (baseRadius * 1.52)
+      ctx.strokeStyle = i % 90 === 0 ? 'rgba(0, 243, 255, 0.4)' : 'rgba(0, 243, 255, 0.15)'
+      ctx.beginPath()
+      ctx.moveTo(x1, y1)
+      ctx.lineTo(x2, y2)
+      ctx.stroke()
+    }
 
+    if (voiceState === 'idle') {
+      // 1. Idle state: breathing pulse concentric rings
+      const pulse = 1 + 0.08 * Math.sin(time * 2.5)
+      const radius = baseRadius * pulse
+
+      // Glowing radial gradient
+      const gradient = ctx.createRadialGradient(centerX, centerY, radius * 0.1, centerX, centerY, radius * 1.1)
+      gradient.addColorStop(0, 'rgba(0, 102, 255, 0.4)')
+      gradient.addColorStop(0.5, 'rgba(0, 243, 255, 0.15)')
+      gradient.addColorStop(1, 'rgba(5, 10, 16, 0)')
+      ctx.fillStyle = gradient
+      ctx.beginPath()
+      ctx.arc(centerX, centerY, radius * 1.1, 0, Math.PI * 2)
+      ctx.fill()
+
+      // Concentric sharp rings
+      ctx.lineWidth = 1.5
+      ctx.strokeStyle = 'rgba(0, 243, 255, 0.6)'
+      ctx.beginPath()
+      ctx.arc(centerX, centerY, radius, 0, Math.PI * 2)
+      ctx.stroke()
+
+      ctx.strokeStyle = 'rgba(0, 102, 255, 0.3)'
+      ctx.beginPath()
+      ctx.arc(centerX, centerY, radius * 0.7, 0, Math.PI * 2)
+      ctx.stroke()
+
+    } else if (voiceState === 'listening') {
+      // 2. Listening state: circular responsive waveform
+      const analyser = analyserRef.current
+      const bufferLength = analyser ? analyser.frequencyBinCount : 128
+      const dataArray = new Uint8Array(bufferLength)
+      if (analyser) {
+        analyser.getByteFrequencyData(dataArray)
+      }
+
+      // Base glow
+      const gradient = ctx.createRadialGradient(centerX, centerY, baseRadius * 0.2, centerX, centerY, baseRadius * 1.3)
+      gradient.addColorStop(0, 'rgba(0, 243, 255, 0.35)')
+      gradient.addColorStop(0.5, 'rgba(0, 102, 255, 0.15)')
+      gradient.addColorStop(1, 'rgba(5, 10, 16, 0)')
+      ctx.fillStyle = gradient
+      ctx.beginPath()
+      ctx.arc(centerX, centerY, baseRadius * 1.3, 0, Math.PI * 2)
+      ctx.fill()
+
+      // Render audio waveform along the circle perimeter
       ctx.lineWidth = 2
       ctx.strokeStyle = '#00f3ff'
       ctx.beginPath()
-
-      const sliceWidth = canvas.width / bufferLength
-      let x = 0
-
-      for (let i = 0; i < bufferLength; i++) {
-        const v = dataArray[i] / 128.0
-        const y = (v * canvas.height) / 2
-
+      
+      const numPoints = 120
+      for (let i = 0; i <= numPoints; i++) {
+        const index = Math.floor((i % numPoints) / numPoints * bufferLength)
+        const magnitude = dataArray[index] / 255.0
+        const offset = magnitude * 40 * (0.8 + 0.2 * Math.sin(time * 10 + i))
+        const angle = (i / numPoints) * Math.PI * 2
+        const radius = baseRadius + offset
+        
+        const x = centerX + Math.cos(angle) * radius
+        const y = centerY + Math.sin(angle) * radius
+        
         if (i === 0) {
           ctx.moveTo(x, y)
         } else {
           ctx.lineTo(x, y)
         }
-
-        x += sliceWidth
       }
-
-      ctx.lineTo(canvas.width, canvas.height / 2)
+      ctx.closePath()
       ctx.stroke()
-    }
 
-    draw()
+      // Inner pulsating core
+      ctx.fillStyle = 'rgba(0, 243, 255, 0.8)'
+      ctx.beginPath()
+      ctx.arc(centerX, centerY, baseRadius * 0.15 * (1 + 0.1 * Math.sin(time * 20)), 0, Math.PI * 2)
+      ctx.fill()
+
+    } else if (voiceState === 'thinking') {
+      // 3. Thinking state: rotating holographic dashboard gears
+      ctx.lineWidth = 1.5
+      
+      // Outer ring rotating clockwise
+      ctx.strokeStyle = 'rgba(0, 243, 255, 0.8)'
+      ctx.save()
+      ctx.translate(centerX, centerY)
+      ctx.rotate(time * 1.5)
+      ctx.beginPath()
+      ctx.arc(0, 0, baseRadius * 1.1, 0, Math.PI * 1.6) // Dented arc
+      ctx.stroke()
+      ctx.restore()
+
+      // Inner ring rotating counter-clockwise
+      ctx.strokeStyle = 'rgba(0, 102, 255, 0.6)'
+      ctx.save()
+      ctx.translate(centerX, centerY)
+      ctx.rotate(-time * 2.2)
+      // Dashed circle
+      ctx.setLineDash([8, 12])
+      ctx.beginPath()
+      ctx.arc(0, 0, baseRadius * 0.8, 0, Math.PI * 2)
+      ctx.stroke()
+      ctx.restore()
+
+      // Inner core gear ticks
+      ctx.strokeStyle = '#ffffff'
+      ctx.lineWidth = 2
+      ctx.save()
+      ctx.translate(centerX, centerY)
+      ctx.rotate(time * 0.8)
+      for (let i = 0; i < 8; i++) {
+        ctx.beginPath()
+        ctx.moveTo(0, -baseRadius * 0.4)
+        ctx.lineTo(0, -baseRadius * 0.5)
+        ctx.stroke()
+        ctx.rotate(Math.PI / 4)
+      }
+      ctx.restore()
+
+      // Core glow
+      const pulse = 1 + 0.12 * Math.sin(time * 12)
+      const gradient = ctx.createRadialGradient(centerX, centerY, 5, centerX, centerY, baseRadius * 0.4 * pulse)
+      gradient.addColorStop(0, 'rgba(255, 255, 255, 0.7)')
+      gradient.addColorStop(0.5, 'rgba(0, 243, 255, 0.3)')
+      gradient.addColorStop(1, 'rgba(5, 10, 16, 0)')
+      ctx.fillStyle = gradient
+      ctx.beginPath()
+      ctx.arc(centerX, centerY, baseRadius * 0.4 * pulse, 0, Math.PI * 2)
+      ctx.fill()
+
+    } else if (voiceState === 'speaking') {
+      // 4. Speaking state: energetic overlapping sine waves (simulated audio voice)
+      const numWaves = 4
+      const radius = baseRadius
+
+      // Outer glow
+      const gradient = ctx.createRadialGradient(centerX, centerY, radius * 0.2, centerX, centerY, radius * 1.3)
+      gradient.addColorStop(0, 'rgba(0, 102, 255, 0.4)')
+      gradient.addColorStop(0.6, 'rgba(0, 243, 255, 0.15)')
+      gradient.addColorStop(1, 'rgba(5, 10, 16, 0)')
+      ctx.fillStyle = gradient
+      ctx.beginPath()
+      ctx.arc(centerX, centerY, radius * 1.3, 0, Math.PI * 2)
+      ctx.fill()
+
+      for (let w = 0; w < numWaves; w++) {
+        ctx.beginPath()
+        ctx.strokeStyle = w === 0 ? '#00f3ff' : w === 1 ? 'rgba(0, 102, 255, 0.7)' : w === 2 ? 'rgba(0, 243, 255, 0.4)' : 'rgba(255, 255, 255, 0.6)'
+        ctx.lineWidth = w === 0 ? 2 : 1
+        
+        const speed = (w + 1.2) * 4.5
+        const amplitude = 25 * Math.sin(time * 1.5) * (1 - w * 0.22)
+        const frequency = (w + 1) * 0.03
+
+        const numPoints = 80
+        for (let i = -numPoints/2; i <= numPoints/2; i++) {
+          const pct = i / (numPoints/2)
+          // Apply Gaussian envelope to keep wave peaks in the center of the orb
+          const envelope = Math.exp(-pct * pct * 3.5)
+          const waveVal = Math.sin(i * frequency + time * speed) * amplitude * envelope
+          
+          const x = centerX + pct * radius * 0.95
+          const y = centerY + waveVal
+
+          if (i === -numPoints/2) {
+            ctx.moveTo(x, y)
+          } else {
+            ctx.lineTo(x, y)
+          }
+        }
+        ctx.stroke()
+      }
+    }
+  }
+
+  const getStatusColor = () => {
+    switch (voiceState) {
+      case 'listening': return 'text-[#00f3ff]'
+      case 'thinking': return 'text-[#0066ff] animate-pulse'
+      case 'speaking': return 'text-[#ffffff] font-bold'
+      default: return 'text-[var(--text-muted)]'
+    }
   }
 
   return (
-    <div className="hud-panel p-4 flex flex-col items-center justify-center space-y-4">
-      <div className="flex items-center justify-between w-full border-b border-[rgba(0,243,255,0.15)] pb-2 mb-2">
+    <div className="hud-panel p-4 flex flex-col items-center justify-between" style={{ height: '100%', minHeight: '340px' }}>
+      
+      {/* Header telemetry link */}
+      <div className="flex items-center justify-between w-full border-b border-[rgba(0,243,255,0.15)] pb-3 mb-2">
         <span className="hud-title text-xs tracking-widest flex items-center gap-1.5">
-          <Volume2 className="w-3.5 h-3.5 text-[#00f3ff]" /> AUDIO TELEMETRY LINK
+          <Volume2 className="w-4 h-4 text-[#00f3ff]" /> JARVIS CORE PRESENCE
         </span>
-        <span className="text-[10px] text-[#00f3ff] font-bold">MODE: {isListening ? 'STREAMING' : 'STANDBY'}</span>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-1">
+            <Wifi className="w-3.5 h-3.5 text-[#00f3ff]" />
+            <span className="text-[10px] text-[#00f3ff] font-mono">{latency}</span>
+          </div>
+          <span className={`text-[10px] uppercase font-bold tracking-wider ${getStatusColor()}`}>
+            {voiceState}
+          </span>
+        </div>
       </div>
 
-      {/* Waveform / Visualizer */}
-      <div className="relative w-full h-24 bg-[rgba(0,0,0,0.4)] border border-[rgba(0,243,255,0.1)] flex items-center justify-center overflow-hidden">
-        {isListening ? (
-          <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" width={400} height={100} />
-        ) : (
-          <span className="text-[10px] text-[var(--text-muted)] tracking-widest uppercase font-semibold">Voice Input Offline</span>
-        )}
+      {/* Voice Orb Area */}
+      <div className="relative w-full flex-1 flex items-center justify-center py-4">
+        <canvas 
+          ref={canvasRef} 
+          width={300} 
+          height={200} 
+          className="max-w-full max-h-48 drop-shadow-[0_0_20px_rgba(0,243,255,0.15)]"
+        />
+        
+        {/* Floating Core Status Text overlay */}
+        <div className="absolute bottom-1 text-center">
+          <span className="text-[10px] text-[var(--text-muted)] font-mono tracking-widest uppercase">
+            {statusText}
+          </span>
+        </div>
       </div>
 
-      {/* Controls */}
-      <div className="flex flex-col items-center w-full space-y-2">
+      {/* Output Panel: Realtime Transcripts display */}
+      <div className="w-full space-y-3 mt-4 pt-3 border-t border-[rgba(0,243,255,0.12)]">
+        
+        {/* User live speech */}
+        <div className="p-2.5 bg-[rgba(0,0,0,0.4)] border border-[rgba(0,243,255,0.08)] min-h-[46px] flex flex-col justify-center">
+          <span className="text-[9px] text-[#00f3ff] font-mono tracking-wider block font-bold mb-0.5">SPEECH INPUT</span>
+          <p className="text-xs text-[#dde3ec] font-mono leading-relaxed truncate">
+            {liveTranscript ? liveTranscript : <span className="text-[var(--text-muted)] italic">Awaiting voice command...</span>}
+          </p>
+        </div>
+
+        {/* Jarvis reply readout */}
+        <div className="p-2.5 bg-[rgba(0,243,255,0.04)] border border-[rgba(0,243,255,0.15)] min-h-[60px] flex flex-col justify-center">
+          <span className="text-[9px] text-[#ffffff] font-mono tracking-wider block font-bold mb-0.5">JARVIS OUTPUT</span>
+          <p className="text-xs text-[#00f3ff] font-mono leading-relaxed line-clamp-2">
+            {jarvisReply ? jarvisReply : <span className="text-[var(--text-muted)] italic">Standby...</span>}
+          </p>
+        </div>
+
+        {/* Mic Control toggle */}
         <button
-          onClick={() => setIsListening(prev => !prev)}
-          className={`hud-button w-full py-3 flex items-center justify-center gap-2 ${
-            isListening ? 'bg-[rgba(0,243,255,0.15)] border-white text-white' : ''
+          onClick={() => setIsActive(prev => !prev)}
+          className={`hud-button w-full py-2 flex items-center justify-center gap-2 ${
+            isActive ? 'bg-[rgba(0,243,255,0.06)] border-[#00f3ff]' : 'border-[rgba(0,243,255,0.2)] text-[var(--text-muted)]'
           }`}
         >
-          {isListening ? (
+          {isActive ? (
             <>
-              <MicOff className="w-4 h-4 text-[#ff003c] blink" />
-              <span>TERMINATE AUDIO FEED</span>
+              <Mic className="w-4 h-4 text-[#00f3ff]" />
+              <span className="text-xs">UPLINK ACTIVE // PRESS TO MUTE</span>
             </>
           ) : (
             <>
-              <Mic className="w-4 h-4 text-[#00f3ff]" />
-              <span>INITIATE VOICE CONNECT</span>
+              <MicOff className="w-4 h-4 text-[#ff003c] blink" />
+              <span className="text-xs text-[#ff003c]">UPLINK MUTED // CLICK TO CONNECT</span>
             </>
           )}
         </button>
-        {transcript && (
-          <div className="w-full p-2 bg-[rgba(0,0,0,0.3)] border border-[rgba(0,243,255,0.1)] text-[11px] text-[#dde3ec] max-h-16 overflow-y-auto">
-            <span className="text-[#00f3ff] font-bold">TRANSCRIPT: </span>{transcript}
-          </div>
-        )}
       </div>
+
     </div>
   )
 }
