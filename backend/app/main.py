@@ -13,6 +13,8 @@ from backend.app.agents.vision_agent import vision_agent
 from backend.app.services.voice.tts import text_to_speech
 from backend.app.services.voice.stt import speech_to_text
 from backend.app.services.executive.router import CognitiveRouter
+from backend.app.api.memory import router as memory_router
+
 
 
 # Configure Logger
@@ -40,6 +42,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Register API Routers
+app.include_router(memory_router)
 
 # Initialize Core Agent
 planner = PlannerAgent()

@@ -17,5 +17,4 @@ python-multipart>=0.0.9
 requests>=2.32.3
 duckduckgo-search>=8.1.1
 pyobjc-framework-Vision>=12.2
-
-
+pytest>=9.1.0

@@ -8,6 +8,24 @@ from backend.app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
+def get_text_embedding(text: str, dimension: int = 1536) -> list[float]:
+    """
+    Generate a deterministic normalized pseudo-random vector for local embedding fallback/testing.
+    """
+    import hashlib
+    import random
+    
+    # Seed the RNG deterministically using the text hash
+    seed = int(hashlib.sha256(text.encode('utf-8')).hexdigest(), 16) % (10**8)
+    rng = random.Random(seed)
+    
+    vec = [rng.gauss(0, 1) for _ in range(dimension)]
+    # Normalize to unit vector
+    norm = math.sqrt(sum(x*x for x in vec))
+    if norm > 0:
+        vec = [x/norm for x in vec]
+    return vec
+
 class MemoryStore:
     def __init__(self):
         self.client = None
@@ -183,4 +201,19 @@ class MemoryStore:
         norm2 = math.sqrt(sum(x*x for x in v2))
         return dot_product / (norm1 * norm2) if norm1 > 0 and norm2 > 0 else 0
 
+    def clear(self):
+        """
+        Clear all local and remote mock points.
+        """
+        self._local_semantic_vectors = []
+        self._local_code_vectors = []
+        if self.client:
+            try:
+                for collection_name in [self.semantic_collection, self.code_collection]:
+                    self.client.delete_collection(collection_name)
+                self._init_collections()
+            except Exception as e:
+                logger.error(f"Error clearing collections: {e}")
+
 memory_store = MemoryStore()
+
